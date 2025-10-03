@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>ToDo App</title>
+</head>
+<body>
+    <h1>ToDo App (минимальный фронт)</h1>
+
+    <!-- Форма логина -->
+    <h2>Логин</h2>
+    <input id="email" type="text" placeholder="Email">
+    <input id="password" type="password" placeholder="Пароль">
+    <button onclick="login()">Войти</button>
+
+    <!-- Создание задачи -->
+    <h2>Создать задачу</h2>
+    <input id="title" type="text" placeholder="Заголовок">
+    <input id="desc" type="text" placeholder="Описание">
+    <button onclick="createTask()">Создать</button>
+
+    <!-- Список задач -->
+    <h2>Мои задачи</h2>
+    <button onclick="getTasks()">Показать</button>
+    <ul id="tasks"></ul>
+
+    <script>
+        //let token = null; // будем хранить токен тут
+
+        async function login() {
+            const res = await fetch("http://127.0.0.1:8000/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: document.getElementById("email").value,
+                    password: document.getElementById("password").value
+                })
+            });
+
+            const data = await res.json();
+            localStorage.setItem("user_id", data.user_id);
+            //localStorage.setItem("token", data.access_token); // сохраним токен
+            alert("Логин успешен!");
+        }
+
+        async function createTask() {
+            const userId = localStorage.getItem("user_id");
+            const res = await fetch("http://127.0.0.1:8000/tasks/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    title: document.getElementById("title").value,
+                    description: document.getElementById("desc").value,
+                    is_done: false,
+                    owner_id: userId
+                })
+            });
+
+            const data = await res.json();
+            console.log(data);
+            alert("Задача создана!");
+        }
+
+        async function getTasks() {
+            const userId = localStorage.getItem("user_id");
+            const res = await fetch(`http://127.0.0.1:8000/users/${userId}/tasks`);
+            const tasks = await res.json();
+
+            const list = document.getElementById("tasks");
+            list.innerHTML = "";
+            tasks.forEach(t => {
+                const li = document.createElement("li");
+                li.textContent = `${t.title} — ${t.is_done ? "✅" : "❌"}`;
+                list.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>
