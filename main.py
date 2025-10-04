@@ -119,6 +119,7 @@ app.mount("/home", StaticFiles(directory="home", html=True), name="home")
 
 @app.post("/login")
 def login(payload: LoginData, db: Session = Depends(get_db)):
+    print(payload.model_dump())  # ← выводим то, что прислал фронт
     # ищем пользователя по email
     user = db.query(User).filter(User.email == payload.email).first()
     if not user:
