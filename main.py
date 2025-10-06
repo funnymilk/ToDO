@@ -4,7 +4,9 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import Boolean, ForeignKey, create_engine, Column, Integer, String, UniqueConstraint, select, DateTime, update
 from sqlalchemy.orm import sessionmaker, declarative_base, Session, relationship
 from dotenv import load_dotenv
-import os, hashlib
+import os
+import re
+from passlib.hash import argon2
 from datetime import datetime, timedelta
 from fastapi.staticfiles import StaticFiles
 
@@ -47,7 +49,7 @@ class LoginData(BaseModel):
     password: str
 
 class UserCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100)
+    name: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
     password: str = Field(..., min_length=6, max_length=128)
 
@@ -98,6 +100,13 @@ class TasksToOwner(BaseModel):
             datetime: lambda v: v.strftime("%Y-%m-%d %H:%M")
         }
 
+
+class TaskUpdate(BaseModel):
+    is_done: bool | None = None
+    deadline: datetime | None = None
+    title: str | None = None
+    description: str | None = None
+
 #--------------------------------------------------
 
 
@@ -108,10 +117,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-# 5) Утилита хеширования (простая для демо)
-def hash_pwd(raw: str) -> str:
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 # 6) Приложение и маршруты
 app = FastAPI(title="ToDo API")
@@ -125,9 +130,8 @@ def login(payload: LoginData, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-    # хэшируем введённый пароль и сравниваем
-    password_hash = hashlib.sha256(payload.password.encode("utf-8")).hexdigest()
-    if user.password_hash != password_hash:
+    # хэшируем введённый пароль и сравниваем bcrypt.verify(payload.password, user.password_hash)
+    if not argon2.verify(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Неверный пароль")
 
     # если всё ок — возвращаем информацию
@@ -141,14 +145,23 @@ def login(payload: LoginData, db: Session = Depends(get_db)):
 @app.post("/users/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(payload: UserCreate, db: Session = Depends(get_db)):
     # проверка дубликата email (ускоряет ошибки до коммита)
-    exists = db.execute(select(User).where(User.email == payload.email)).scalar_one_or_none()
+    exists = db.query(User).filter(User.email == payload.email).first()
+
+    if payload.name.strip().lower() in ["admin", "test", "user"]:
+        raise HTTPException(status_code=400, detail="Недопустимое имя пользователя")
+    
     if exists:
         raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
+    
+    if not re.match(r"^(?=.*[A-Z])(?=.*\d).+$", payload.password):
+        raise HTTPException(status_code=400, detail="Пароль должен содержать хотя бы одну цифру и заглавную букву")
+    
+
 
     user = User(
         name=payload.name,
         email=payload.email,
-        password_hash=hash_pwd(payload.password),
+        password_hash = argon2.hash(payload.password) ,
     )
     db.add(user)
     db.commit()
@@ -218,31 +231,17 @@ def get_user_tasks(
     return query.all()
 
 @app.post("/tasks/{task_id}/up", response_model=TaskOut)
-def up_task(task_id: int,
-            isdone: bool | None = Query(None),
-            deadline: datetime | None = Query(None),
-            title: str | None = Query(None),
-            description: str | None = Query(None),
-            db: Session = Depends(get_db)):
-    # 1. достаём таску
+def up_task(task_id: int, payload: TaskUpdate, db: Session = Depends(get_db)):
     task = db.get(Task, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Задача не найдена")
 
-    # 2. обновляем только то, что пришло
-    if isdone is not None:
-        task.is_done = isdone
-    if deadline is not None:
-        task.deadline = deadline
-    if title is not None:
-        task.title = title
-    if description is not None:
-        task.description = description
+    data = payload.dict(exclude_unset=True)
+    for field, value in data.items():
+        setattr(task, field, value)
 
-    # 3. сохраняем
     db.commit()
     db.refresh(task)
-
     return task
 
 @app.delete("/task/{task_id}")
