@@ -12,9 +12,14 @@ from fastapi.staticfiles import StaticFiles
 
 
 
-# 1) Настройки / БД
-load_dotenv()
+# Загружаем .env, если не в Docker
+if os.getenv("RUNNING_IN_DOCKER") != "1":
+    load_dotenv()
+
 DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("❌ DATABASE_URL не задан. Проверь .env или docker-compose.yml")
+
 engine = create_engine(DATABASE_URL, echo=True, future=True)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
 Base = declarative_base()
@@ -121,6 +126,8 @@ def get_db():
 # 6) Приложение и маршруты
 app = FastAPI(title="ToDo API")
 app.mount("/home", StaticFiles(directory="home", html=True), name="home")
+
+
 
 @app.post("/login")
 def login(payload: LoginData, db: Session = Depends(get_db)):
