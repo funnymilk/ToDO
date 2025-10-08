@@ -1,9 +1,13 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:15
     restart: always
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      POSTGRES_USER: todo
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: todo_db
     ports:
       - "5433:5432"
     volumes:
@@ -16,8 +20,9 @@ services:
       - db
     ports:
       - "8000:8000"
-    env_file:
-      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://todo:secret@db:5432/todo_db  
+      RUNNING_IN_DOCKER: "1"
     volumes:
       - .:/app
 
