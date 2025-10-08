@@ -10,6 +10,8 @@ from passlib.hash import argon2
 from datetime import datetime, timedelta
 from fastapi.staticfiles import StaticFiles
 
+from models.models import User, Task
+
 
 
 # Загружаем .env, если не в Docker
@@ -24,7 +26,7 @@ engine = create_engine(DATABASE_URL, echo=True, future=True)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
 Base = declarative_base()
 
-# 2) ORM-модель
+"""# 2) ORM-модель
 class User(Base):
     __tablename__ = "users"
     __table_args__ = (UniqueConstraint("email", name="uq_users_email"),)
@@ -44,7 +46,7 @@ class Task(Base):
     is_done = Column(Boolean, default=False)
     deadline = Column(DateTime, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"))  # связь с пользователем
-    user = relationship("User", back_populates="tasks")
+    user = relationship("User", back_populates="tasks")"""
 
 Base.metadata.create_all(bind=engine)
 
