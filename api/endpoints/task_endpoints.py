@@ -2,33 +2,23 @@ from datetime import datetime
 import argon2
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from requests import Session
-from db.session import SessionLocal
+from db.session import SessionLocal, get_db
 from models.models import User
 from schemas.schemas import LoginData, TaskCreate, TaskOut, TaskUpdate, TasksToOwner
 from services.task_service import create_task, del_task, get_alltasks, get_task, get_user_tasks, up_task
 
 router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @router.post("/tasks/", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
-def create_task_endpoind(task: TaskCreate, db: Session = Depends(get_db)):
-    
+def create_task_endpoind(task: TaskCreate, db: Session = Depends(get_db)):    
     return create_task(task, db)
 
 @router.get("/tasks/{task_id}", response_model=TaskOut)
-def get_task_endpoind(task_id: int, db: Session = Depends(get_db)):
-    
+def get_task_endpoind(task_id: int, db: Session = Depends(get_db)):    
     return get_task(task_id, db)
 
 @router.get("/alltask/", response_model=list[TaskOut])
 def get_alltasks_endpoind(db: Session = Depends(get_db), isdone: bool | None = Query(None)):
-
     return get_alltasks(db, isdone)
 
 #response_model=list[TasksToOwner]
@@ -43,10 +33,8 @@ def get_user_tasks_endpoind(
 
 @router.post("/tasks/{task_id}/up", response_model=TaskOut)
 def up_task_endpoind(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
-
     return up_task(task_id, task, db)
 
 @router.delete("/task/{task_id}")
 def del_task_endpoind(task_id: int, db: Session = Depends(get_db)):
-
     return del_task(task_id, db)

@@ -1,44 +1,37 @@
 import re
 import argon2
+from argon2 import PasswordHasher
 from fastapi import Depends, HTTPException
-from requests import Session
+from sqlalchemy.orm import Session
 
 from db.session import get_db
 from models.models import User
+from repository.auth_Repository import authRepository
 from schemas.schemas import LoginData, UserCreate
 
 
 def create_user(payload: UserCreate, db: Session = Depends(get_db)):
    # проверка дубликата email (ускоряет ошибки до коммита)
-    exists = db.query(User).filter(User.email == payload.email).first()
+    exists = authRepository(db).exists_check(payload.email)
 
     if payload.name.strip().lower() in ["admin", "test", "user"]:
-        raise HTTPException(status_code=400, detail="Недопустимое имя пользователя")
-    
+        raise HTTPException(status_code=400, detail="Недопустимое имя пользователя")    
     if exists:
-        raise HTTPException(status_code=400, detail="Email уже зарегистрирован")
-    
+        raise HTTPException(status_code=400, detail="Email уже зарегистрирован")    
     if not re.match(r"^(?=.*[A-Z])(?=.*\d).+$", payload.password):
         raise HTTPException(status_code=400, detail="Пароль должен содержать хотя бы одну цифру и заглавную букву")
-    user = User(
-        name=payload.name,
-        email=payload.email,
-        password_hash = argon2.hash(payload.password),
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    return user
+        
+    return authRepository(db).create_user(payload)
 
 
 def login(payload: LoginData, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == payload.email).first()
+    
+    user = authRepository(db).exists_check(payload.email)    
+    
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
-
     # хэшируем введённый пароль и сравниваем bcrypt.verify(payload.password, user.password_hash)
-    if not argon2.verify(payload.password, user.password_hash):
+    if not PasswordHasher().verify(user.password_hash, payload.password):
         raise HTTPException(status_code=401, detail="Неверный пароль")
 
     # если всё ок — возвращаем информацию

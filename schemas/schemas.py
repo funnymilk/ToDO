@@ -58,7 +58,6 @@ class TasksToOwner(BaseModel):
             datetime: lambda v: v.strftime("%Y-%m-%d %H:%M")
         }
 
-
 class TaskUpdate(BaseModel):
     is_done: bool | None = None
     deadline: datetime | None = None
