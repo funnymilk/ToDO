@@ -1,14 +1,13 @@
     
 from datetime import datetime, timedelta
-from fastapi import Depends, HTTPException, Query, Response
+from fastapi import Query
 from sqlalchemy.orm import Session
-from db.session import get_db
 from models.models import Task
 from schemas.schemas import TaskCreate, TaskUpdate
 
 
 class taskRepository:
-    def __init__(self, db: Session = Depends(get_db)):
+    def __init__(self, db: Session):
         self.db = db
 
     def create_task(self, payload: TaskCreate):

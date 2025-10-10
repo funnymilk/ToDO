@@ -1,13 +1,8 @@
     
-from datetime import datetime, timedelta
-import re
-import argon2
 from argon2 import PasswordHasher
-from fastapi import Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
-from db.session import get_db
-from models.models import Task, User
-from schemas.schemas import TaskCreate, TaskUpdate, UserCreate
+from models.models import User
+from schemas.schemas import UserCreate
 
 
 class authRepository:

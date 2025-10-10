@@ -1,10 +1,8 @@
 from datetime import datetime
-import argon2
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from requests import Session
-from db.session import SessionLocal, get_db
-from models.models import User
-from schemas.schemas import LoginData, TaskCreate, TaskOut, TaskUpdate, TasksToOwner
+from db.session import get_db
+from schemas.schemas import TaskCreate, TaskOut, TaskUpdate, TasksToOwner
 from services.task_service import create_task, del_task, get_alltasks, get_task, get_user_tasks, up_task
 
 router = APIRouter()

@@ -1,8 +1,7 @@
-from fastapi import Depends, status, APIRouter
+from fastapi import Depends, APIRouter
 from sqlalchemy.orm import Session
-from db.session import SessionLocal, get_db
-from schemas.schemas import UserCreate, UserOut
-from services.auth_service import create_user
+from db.session import get_db
+from schemas.schemas import UserOut
 from services.user_service import get_user
 
 router = APIRouter()

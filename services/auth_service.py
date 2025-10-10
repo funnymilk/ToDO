@@ -1,16 +1,13 @@
 import re
-import argon2
 from argon2 import PasswordHasher
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from db.session import get_db
-from models.models import User
 from repository.auth_Repository import authRepository
 from schemas.schemas import LoginData, UserCreate
 
 
-def create_user(payload: UserCreate, db: Session = Depends(get_db)):
+def create_user(payload: UserCreate, db: Session):
    # проверка дубликата email (ускоряет ошибки до коммита)
     exists = authRepository(db).exists_check(payload.email)
 
@@ -24,7 +21,7 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
     return authRepository(db).create_user(payload)
 
 
-def login(payload: LoginData, db: Session = Depends(get_db)):
+def login(payload: LoginData, db: Session):
     
     user = authRepository(db).exists_check(payload.email)    
     
