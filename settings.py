@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     @property
     def DATABASE_URL(self) -> str:
         #url = f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-        url = "postgresql+psycopg://todo:secret@localhost:5433/todo_db"
+        url = "postgresql+psycopg2://todo:secret@db:5432/todo_db"
         return url
 
     class Config:

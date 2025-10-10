@@ -1,6 +1,6 @@
 from datetime import datetime
 from fastapi import APIRouter, Depends, Query, status
-from requests import Session
+from sqlalchemy.orm import Session
 from db.session import get_db
 from schemas.schemas import TaskCreate, TaskOut, TaskUpdate, TasksToOwner
 from services.task_service import create_task, del_task, get_alltasks, get_task, get_user_tasks, up_task
