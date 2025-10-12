@@ -17,7 +17,7 @@ def get_task(task_id: int, db: Session):
 def get_alltasks(db: Session, isdone: bool | None = Query(None)):
     
     if isdone is not None:
-        task = taskRepository(db).get_isdone(isdone) #НУЖЭЕН ТЕСТ, НЕ СРАБОТАЕТ ЛИ ЦЕЛДИКОМ И ПОЛНОСТЬЮ ОДНОЙ СТРОКОЙ
+        task = taskRepository(db).get_isdone(isdone) 
     else:
         task = taskRepository(db).get_alltasks()
     if not task:
