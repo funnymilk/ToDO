@@ -17,7 +17,7 @@ class taskRepository:
             owner_id=payload.owner_id,
             deadline=payload.deadline,
             is_done=payload.is_done,            
-        )        
+        )
         self.db.add(task)
         self.db.commit()
         self.db.refresh(task)

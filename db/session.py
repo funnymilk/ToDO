@@ -5,7 +5,7 @@ from db.Base import Base
 
 settings = Settings()
 engine = create_engine(settings.DATABASE_URL, echo=True, future=True)
-Base.metadata.create_all(bind=engine)
+#Base.metadata.create_all(bind=engine) кажется он тут не нужен, пока закомментирую
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False, future=True)
 
 def get_db():

@@ -6,7 +6,7 @@ from services.auth_service import login, create_user
 
 router = APIRouter()
 
-@router.post("/users/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/create", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user_endpoind(user: UserCreate, db: Session = Depends(get_db)):   
     return create_user(user, db)
 
