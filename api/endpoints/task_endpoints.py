@@ -1,38 +1,38 @@
 from datetime import datetime
+from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.orm import Session
-from db.session import get_db
+from api.dependencies import tasks_service
 from schemas.schemas import TaskCreate, TaskOut, TaskUpdate, TasksToOwner
-from services.task_service import create_task, del_task, get_alltasks, get_task, get_user_tasks, up_task
-
+from services.task_service import TasksService
 router = APIRouter()
 
-@router.post("/tasks/", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
-def create_task_endpoind(task: TaskCreate, db: Session = Depends(get_db)):    
-    return create_task(task, db)
+@router.post("/", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
+def create_task_endpoind(task: TaskCreate, tasks_service: Annotated[TasksService, Depends(tasks_service)]):    
+    return tasks_service.create_task(task)
 
-@router.get("/tasks/{task_id}", response_model=TaskOut)
-def get_task_endpoind(task_id: int, db: Session = Depends(get_db)):    
-    return get_task(task_id, db)
+@router.get("/{task_id}", response_model=TaskOut)
+def get_task_endpoind(task_id: int, tasks_service: Annotated[TasksService, Depends(tasks_service)]):    
+    return tasks_service.get_task(task_id)
 
-@router.get("/alltask/", response_model=list[TaskOut])
-def get_alltasks_endpoind(db: Session = Depends(get_db), isdone: bool | None = Query(None)):
-    return get_alltasks(db, isdone)
+@router.get("/all/", response_model=list[TaskOut])
+def get_alltasks_endpoind(tasks_service: Annotated[TasksService, Depends(tasks_service)], isdone: bool | None = Query(None)):
+    return tasks_service.get_all(isdone)
 
-#response_model=list[TasksToOwner]
-@router.get("/users/{user_id}/tasks", response_model=list[TasksToOwner])
+@router.get("/users/{user_id}", response_model=list[TasksToOwner])
 def get_user_tasks_endpoind(
     user_id: int, 
-    db: Session = Depends(get_db), 
+    tasks_service: Annotated[TasksService, Depends(tasks_service)], 
     check: bool | None = Query(None),
     deadline: datetime | None = Query(None)
 ):
-    return get_user_tasks(user_id, db, check, deadline)
+    return tasks_service.get_user_tasks(user_id, check, deadline)
 
-@router.post("/tasks/{task_id}/up", response_model=TaskOut)
-def up_task_endpoind(task_id: int, task: TaskUpdate, db: Session = Depends(get_db)):
-    return up_task(task_id, task, db)
+@router.post("/{task_id}/up", response_model=TaskOut)
+def up_task_endpoind(task_id: int, data: TaskUpdate, tasks_service: Annotated[TasksService, Depends(tasks_service)]):
+    return tasks_service.up_task(task_id, data)
 
-@router.delete("/task/{task_id}")
-def del_task_endpoind(task_id: int, db: Session = Depends(get_db)):
-    return del_task(task_id, db)
+@router.delete("/{task_id}")
+def del_task_endpoind(task_id: int, tasks_service: Annotated[TasksService, Depends(tasks_service)]):
+    return tasks_service.del_task(task_id)
+
+

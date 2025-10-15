@@ -23,5 +23,3 @@ class Task(Base):
     deadline = Column(DateTime, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"))  # связь с пользователем
     user = relationship("User", back_populates="tasks")
-
-#Base.metadata.create_all(bind=engines)
