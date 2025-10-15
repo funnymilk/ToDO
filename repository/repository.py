@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from fastapi import Query
 from db.session import SessionLocal
-from schemas.schemas import TaskCreate, TaskUpdate
+from models.models import User
+from schemas.schemas import TaskCreate, TaskUpdate, UserCreate
 
 
 class AbstractRepository(ABC):
@@ -32,6 +33,18 @@ class AbstractRepository(ABC):
     
     @abstractmethod
     def del_task():
+        raise NotImplementedError
+    
+    @abstractmethod
+    def get_user():
+        raise NotImplementedError
+    
+    @abstractmethod
+    def create_user():
+        raise NotImplementedError
+    
+    @abstractmethod
+    def login_check():
         raise NotImplementedError
     
 class SQLAlchemyRepository(AbstractRepository):
@@ -85,3 +98,16 @@ class SQLAlchemyRepository(AbstractRepository):
         self.db.delete(task)
         self.db.commit()
         return task
+    
+    def get_user(self, user_id: int):
+        return self.db.get(self.model, user_id)
+    
+    def create_user(self, user_data: User):        
+        #new_user = self.model(user_data) 
+        self.db.add(user_data)
+        self.db.commit()
+        self.db.refresh(user_data)
+        return user_data
+    
+    def login_check(self, email: str):
+        return self.db.query(self.model).filter(self.model.email == email).first()
