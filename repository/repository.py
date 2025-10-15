@@ -3,8 +3,8 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from fastapi import Query
 from db.session import SessionLocal
-from models.models import User
 from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate
+from api.dto import UserCreate as dtoUCreate
 
 
 class AbstractRepository(ABC):
@@ -103,7 +103,7 @@ class SQLAlchemyRepository(AbstractRepository):
     def get_user(self, user_id: int):
         return self.db.get(self.model, user_id)
     
-    def create_user(self, user_data: User):        
+    def create_user(self, user_data: dtoUCreate):        
         #new_user = self.model(user_data) 
         self.db.add(user_data)
         self.db.commit()
