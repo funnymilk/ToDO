@@ -3,7 +3,7 @@ from argon2 import PasswordHasher
 from fastapi import HTTPException
 from models.models import User
 from repository.repository import AbstractRepository
-from schemas.schemas import LoginData, UserCreate
+from api.dto import UserCreate as dtoUCreate, LoginData as dtoLogin
 
 class UsersService:
     def __init__(self, users_repo: AbstractRepository):
@@ -15,9 +15,7 @@ class UsersService:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
         return user
     
-    def create_user(self, user: UserCreate):
-    # проверка дубликата email (ускоряет ошибки до коммита)
-        print("AAAAAAAA ", user.email)
+    def create_user(self, user: dtoUCreate):
         exists = self.users_repo.login_check(user.email)
 
         if exists:
@@ -31,21 +29,17 @@ class UsersService:
             email=user.email,
             password_hash = PasswordHasher().hash(user.password),
         )
-        #user_data = user_data.model_dump()
         return self.users_repo.create_user(user_data)
 
 
-    def login(self, loginData: LoginData):
+    def login(self, loginData: dtoLogin):
         user = self.users_repo.login_check(loginData.email)
-        #user = authRepository(db).exists_check(payload.email)    
         
         if not user:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
         # хэшируем введённый пароль и сравниваем bcrypt.verify(payload.password, user.password_hash)
         if not PasswordHasher().verify(user.password_hash, loginData.password):
             raise HTTPException(status_code=401, detail="Неверный пароль")
-
-        # если всё ок — возвращаем информацию
         return {
             "message": "Успешный вход",
             "user_id": user.id,

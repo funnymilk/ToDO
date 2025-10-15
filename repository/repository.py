@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
+from dataclasses import asdict
 from datetime import datetime, timedelta
 from fastapi import Query
 from db.session import SessionLocal
 from models.models import User
-from schemas.schemas import TaskCreate, TaskUpdate, UserCreate
+from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate
 
 
 class AbstractRepository(ABC):
@@ -54,7 +55,8 @@ class SQLAlchemyRepository(AbstractRepository):
     def get_one(self, task_id: int):        
         return self.db.get(self.model, task_id)
     
-    def add_one(self, task_data: TaskCreate):        
+    def add_one(self, task: dtoTCreate):        
+        task_data = asdict(task)
         new_task = self.model(**task_data) 
         self.db.add(new_task)
         self.db.commit()
@@ -84,10 +86,9 @@ class SQLAlchemyRepository(AbstractRepository):
             query = self.db.query(self.model).filter(self.model.deadline >= start, self.model.deadline < end)
         return query.all()
     
-    def up_task(self, task_id: int, payload: TaskUpdate):
-        task = self.db.get(self.model, task_id)        
-        data = payload.model_dump(exclude_unset=True)
-        for field, value in data.items():
+    def up_task(self, task_id: int, data: dtoTUpdate):
+        task = self.db.get(self.model, task_id)
+        for field, value in asdict(data).items():
             setattr(task, field, value)
         self.db.commit()
         self.db.refresh(task)
