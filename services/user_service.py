@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from models.models import User
 from repository.repository import AbstractRepository
 from api.dto import UserCreate as dtoUCreate, LoginData as dtoLogin
+from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, UserNotFound
 
 class UsersService:
     def __init__(self, users_repo: AbstractRepository):
@@ -12,18 +13,18 @@ class UsersService:
     def get_user(self, user_id: int):
         user = self.users_repo.get_user(user_id)
         if not user:
-            raise HTTPException(status_code=404, detail="Пользователь не найден")
+            raise UserNotFound
         return user
     
     def create_user(self, user: dtoUCreate):
         exists = self.users_repo.login_check(user.email)
 
         if exists:
-            raise HTTPException(status_code=400, detail="Email уже зарегистрирован")    
+            raise EmailExists    
         if user.name.strip().lower() in ["admin", "test", "user"]:
-            raise HTTPException(status_code=400, detail="Недопустимое имя пользователя")    
+            raise IncorrectName    
         if not re.match(r"^(?=.*[A-Z])(?=.*\d).+$", user.password):
-            raise HTTPException(status_code=400, detail="Пароль должен содержать хотя бы одну цифру и заглавную букву")
+            raise IncorrectPassword
         user_data = User(
             name=user.name,
             email=user.email,
@@ -36,10 +37,10 @@ class UsersService:
         user = self.users_repo.login_check(loginData.email)
         
         if not user:
-            raise HTTPException(status_code=404, detail="Пользователь не найден")
+            raise UserNotFound
         # хэшируем введённый пароль и сравниваем bcrypt.verify(payload.password, user.password_hash)
         if not PasswordHasher().verify(user.password_hash, loginData.password):
-            raise HTTPException(status_code=401, detail="Неверный пароль")
+            raise InputIncorrectPassword
         return {
             "message": "Успешный вход",
             "user_id": user.id,
