@@ -1,21 +1,22 @@
 import re
 from argon2 import PasswordHasher
-from fastapi import HTTPException
 from models.models import User
 from repository.repository import AbstractRepository
 from api.dto import UserCreate as dtoUCreate, LoginData as dtoLogin
-from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, UserNotFound
+from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, UserNotFound, user_exceptions_trap
 
 class UsersService:
     def __init__(self, users_repo: AbstractRepository):
         self.users_repo: AbstractRepository = users_repo()
-        
+    
+    @user_exceptions_trap
     def get_user(self, user_id: int):
         user = self.users_repo.get_user(user_id)
         if not user:
             raise UserNotFound
         return user
     
+    @user_exceptions_trap
     def create_user(self, user: dtoUCreate):
         exists = self.users_repo.login_check(user.email)
 
@@ -32,12 +33,9 @@ class UsersService:
         )
         return self.users_repo.create_user(user_data)
 
-
+    @user_exceptions_trap
     def login(self, loginData: dtoLogin):
         user = self.users_repo.login_check(loginData.email)
-        
-        if not user:
-            raise UserNotFound
         # хэшируем введённый пароль и сравниваем bcrypt.verify(payload.password, user.password_hash)
         if not PasswordHasher().verify(user.password_hash, loginData.password):
             raise InputIncorrectPassword

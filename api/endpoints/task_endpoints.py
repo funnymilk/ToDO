@@ -1,10 +1,9 @@
 from datetime import datetime
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from api.dependencies import tasks_service
 from schemas.schemas import TaskCreate, TaskOut, TaskUpdate, TasksToOwner
 from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate
-from services.exceptions import TaskNotFound
 from services.task_service import TasksService
 router = APIRouter()
 
@@ -16,17 +15,11 @@ def create_task_endpoind(task: TaskCreate, tasks_service: Annotated[TasksService
 
 @router.get("/{task_id}", response_model=TaskOut)
 def get_task_endpoind(task_id: int, tasks_service: Annotated[TasksService, Depends(tasks_service)]):    
-    try:
         return tasks_service.get_task(task_id)
-    except TaskNotFound:
-        raise HTTPException(status_code=404, detail="Таких задач нет")
 
 @router.get("/all/", response_model=list[TaskOut])
 def get_alltasks_endpoind(tasks_service: Annotated[TasksService, Depends(tasks_service)], isdone: bool | None = Query(None)):
-    try: 
         return tasks_service.get_all(isdone)
-    except TaskNotFound:
-        raise HTTPException(status_code=404, detail="Таких задач нет")
 
 @router.get("/users/{user_id}", response_model=list[TasksToOwner])
 def get_user_tasks_endpoind(
@@ -35,25 +28,17 @@ def get_user_tasks_endpoind(
     check: bool | None = Query(None),
     deadline: datetime | None = Query(None)
 ):
-    try:
-        return tasks_service.get_user_tasks(user_id, check, deadline)
-    except TaskNotFound:
-        raise HTTPException(status_code=404, detail="Таких задач нет")
+    return tasks_service.get_user_tasks(user_id, check, deadline)
 
 @router.post("/{task_id}/up", response_model=TaskOut)
 def up_task_endpoind(task_id: int, data: TaskUpdate, tasks_service: Annotated[TasksService, Depends(tasks_service)]):
     update_data = data.model_dump(exclude_unset=True)
     data = dtoTUpdate(**update_data)
-    try:
-        return tasks_service.up_task(task_id, data)
-    except TaskNotFound:
-        raise HTTPException(status_code=404, detail="Таких задач нет")
-
+    return tasks_service.up_task(task_id, data)
 
 @router.delete("/{task_id}")
 def del_task_endpoind(task_id: int, tasks_service: Annotated[TasksService, Depends(tasks_service)]):
-    try:
-        return tasks_service.del_task(task_id)
-    except TaskNotFound:
-        raise Response(status_code=204)
+    tasks_service.del_task(task_id)
+    return Response(status_code=204)
+    
 
