@@ -5,6 +5,8 @@ from fastapi import Query
 from db.session import SessionLocal
 from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate
 from api.dto import UserCreate as dtoUCreate
+from repository.exceptions import NotFound
+from psycopg2 import errors
 
 
 class AbstractRepository(ABC):
@@ -53,7 +55,11 @@ class SQLAlchemyRepository(AbstractRepository):
     db = SessionLocal()
     
     def get_one(self, task_id: int):        
-        return self.db.get(self.model, task_id)
+        try:
+            task = self.db.get(self.model, task_id)
+        except errors.NoData:
+            raise NotFound
+        return task
     
     def add_one(self, task: dtoTCreate):        
         task_data = asdict(task)
@@ -64,10 +70,18 @@ class SQLAlchemyRepository(AbstractRepository):
         return new_task
     
     def get_all(self):  
-        return self.db.query(self.model)
+        try:
+            task = self.db.query(self.model)
+        except errors.NoData:
+            raise NotFound
+        return task
     
     def get_isdone(self, isdone):
-        return self.db.query(self.model).filter(self.model.is_done == isdone)
+        try:
+            task = self.db.query(self.model).filter(self.model.is_done == isdone)
+        except errors.NoData:
+            raise NotFound
+        return task
     
     def get_user_tasks(
         self,    
@@ -75,6 +89,11 @@ class SQLAlchemyRepository(AbstractRepository):
         check: bool | None = Query(None),
         deadline: datetime | None = Query(None)
     ):
+        try:
+            query = self.db.query(self.model).filter(self.model.owner_id == user_id)
+        except errors.NoData:
+            raise NotFound
+        
         query = self.db.query(self.model).filter(self.model.owner_id == user_id)
         
         if check is not None:
@@ -84,10 +103,18 @@ class SQLAlchemyRepository(AbstractRepository):
             start = deadline
             end = deadline + timedelta(minutes=1)
             query = self.db.query(self.model).filter(self.model.deadline >= start, self.model.deadline < end)
-        return query.all()
+        
+        try:
+            task = query.all()
+        except errors.NoData:
+            raise NotFound
+        return task
     
-    def up_task(self, task_id: int, data: dtoTUpdate):
-        task = self.db.get(self.model, task_id)
+    def up_task(self, task_id: int, data: dtoTUpdate):        
+        try:
+            task = self.db.get(self.model, task_id)
+        except errors.NoData:
+            raise NotFound
         for field, value in asdict(data).items():
             setattr(task, field, value)
         self.db.commit()
@@ -95,13 +122,20 @@ class SQLAlchemyRepository(AbstractRepository):
         return task
     
     def del_task(self, task_id: int):
-        task = self.db.get(self.model, task_id)
+        try:
+            task = self.db.get(self.model, task_id)
+        except errors.NoData:
+            raise NotFound
         self.db.delete(task)
         self.db.commit()
         return task
     
     def get_user(self, user_id: int):
-        return self.db.get(self.model, user_id)
+        try:
+            user = self.db.get(self.model, user_id)
+        except errors.NoData:
+            raise NotFound    
+        return user
     
     def create_user(self, user_data: dtoUCreate):        
         #new_user = self.model(user_data) 
