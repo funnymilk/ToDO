@@ -1,7 +1,7 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, TaskNotFound, UserNotFound
+from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, TaskNotFound, TransactionError, UserNotFound
 
 def register_exception_handlers(app):
     @app.exception_handler(TaskNotFound)
@@ -27,3 +27,8 @@ def register_exception_handlers(app):
     @app.exception_handler(InputIncorrectPassword)
     def task_not_found_handler(request: Request, exc: InputIncorrectPassword): 
         return JSONResponse(status_code=404, content={"detail": "Неверный пароль"})
+    
+    @app.exception_handler(TransactionError)
+    def task_not_found_handler(request: Request, exc: TransactionError): 
+        return JSONResponse(status_code=404, content={"detail": "Ошибка транзакции"})
+    

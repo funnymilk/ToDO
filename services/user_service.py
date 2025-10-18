@@ -4,7 +4,7 @@ from models.models import User
 from repository.exceptions import NotFound
 from repository.repository import AbstractRepository
 from api.dto import UserCreate as dtoUCreate, LoginData as dtoLogin
-from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, UserNotFound, user_exceptions_trap
+from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, user_exceptions_trap
 
 class UsersService:
     def __init__(self, users_repo: AbstractRepository):
