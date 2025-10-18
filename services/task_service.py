@@ -3,10 +3,11 @@ from fastapi import Query
 from repository.repository import AbstractRepository
 from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate
 from services.exceptions import task_exceptions_trap
+from sqlalchemy.orm import Session
 
 class TasksService:
-    def __init__(self, tasks_repo: AbstractRepository):
-        self.tasks_repo: AbstractRepository = tasks_repo()
+    def __init__(self, tasks_repo_class: AbstractRepository, db: Session):
+        self.tasks_repo = tasks_repo_class(db)
 
     def create_task(self, task: dtoTCreate):
         return self.tasks_repo.add_one(task)

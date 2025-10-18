@@ -3,12 +3,13 @@ from argon2 import PasswordHasher
 from models.models import User
 from repository.exceptions import NotFound
 from repository.repository import AbstractRepository
+from sqlalchemy.orm import Session
 from api.dto import UserCreate as dtoUCreate, LoginData as dtoLogin
 from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, user_exceptions_trap
 
 class UsersService:
-    def __init__(self, users_repo: AbstractRepository):
-        self.users_repo: AbstractRepository = users_repo()
+    def __init__(self, users_repo_class: AbstractRepository, db: Session):
+        self.users_repo = users_repo_class(db)
     
     @user_exceptions_trap
     def get_user(self, user_id: int):
@@ -28,7 +29,7 @@ class UsersService:
             raise IncorrectName    
         if not re.match(r"^(?=.*[A-Z])(?=.*\d).+$", user.password):
             raise IncorrectPassword
-        user_data = User(
+        user_data = dtoUCreate(
             name=user.name,
             email=user.email,
             password_hash = PasswordHasher().hash(user.password),
