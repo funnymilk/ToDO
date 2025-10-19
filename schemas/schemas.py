@@ -9,14 +9,13 @@ class LoginData(BaseModel):
 class UserCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
-    password: str = Field(..., min_length=6, max_length=128)
+    password_hash: str = Field(..., min_length=6, max_length=128)
 
 class UserOut(BaseModel):
     id: int
     name: str
     email: EmailStr
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 class TaskCreate(BaseModel):
     title: str

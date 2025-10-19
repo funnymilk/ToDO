@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict
 from datetime import datetime, timedelta
 from fastapi import Query
-from db.session import SessionLocal, get_db
 from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate
 from api.dto import UserCreate as dtoUCreate
 from repository.exceptions import NotFound, exceptions_trap
@@ -104,6 +103,8 @@ class SQLAlchemyRepository(AbstractRepository):
     @exceptions_trap
     def up_task(self, task_id: int, data: dtoTUpdate):        
         task = self.db.get(self.model, task_id)
+        if task == None:
+            raise NotFound
         for field, value in asdict(data).items():
             setattr(task, field, value)
         self.db.commit()
@@ -124,11 +125,13 @@ class SQLAlchemyRepository(AbstractRepository):
         user = self.db.get(self.model, user_id)
         return user
     
-    def create_user(self, user_data: dtoUCreate):
-        self.db.add(user_data)
+    def create_user(self, user: dtoUCreate):
+        user_data = asdict(user)
+        new_user = self.model(**user_data) 
+        self.db.add(new_user)
         self.db.commit()
-        self.db.refresh(user_data)
-        return user_data
+        self.db.refresh(new_user)
+        return new_user
     
     @exceptions_trap 
     def login_check(self, email: str):

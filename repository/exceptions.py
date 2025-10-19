@@ -7,16 +7,18 @@ def exceptions_trap(func):
     def wrapper(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
+            if result is None:                     
+                raise NotFound(f"{func.__name__}: object not found")
             return result
-        except NotFound:
-            raise NotFound       
+        except SQLAlchemyError as e:
+            raise NotFound(f"Database error: {e}")
     return wrapper
 
 def trans_exceptions_trap(func):
     def wrapper(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
-        except SQLAlchemyError:
+        except NotFound:
             raise SQLAlchemyError        
         return result
     return wrapper

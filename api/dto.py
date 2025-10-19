@@ -19,7 +19,7 @@ class LoginData:
 class UserCreate:
     name: str
     email: str
-    password: str
+    password_hash: str
 
 @dataclass
 class TaskUpdate:
