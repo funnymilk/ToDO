@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from fastapi import Query
 from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate
 from api.dto import UserCreate as dtoUCreate
-from repository.exceptions import NotFound, exceptions_trap
+from repository.exceptions import NotFound, exceptions_trap, trans_exceptions_trap
 
 
 class AbstractRepository(ABC):
@@ -59,6 +59,7 @@ class SQLAlchemyRepository(AbstractRepository):
         task = self.db.get(self.model, task_id)
         return task
     
+    @exceptions_trap
     def add_one(self, task: dtoTCreate):
         task_data = asdict(task)
         new_task = self.model(**task_data) 
@@ -125,6 +126,7 @@ class SQLAlchemyRepository(AbstractRepository):
         user = self.db.get(self.model, user_id)
         return user
     
+    @trans_exceptions_trap
     def create_user(self, user: dtoUCreate):
         user_data = asdict(user)
         new_user = self.model(**user_data) 

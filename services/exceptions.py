@@ -1,5 +1,4 @@
-from repository.exceptions import NotFound
-from sqlalchemy.exc import SQLAlchemyError
+from repository.exceptions import NotFound, NotUniqEmail
 
 class UserNotFound(Exception):
     pass
@@ -22,22 +21,12 @@ class TaskNotFound(Exception):
 class TransactionError(Exception):
     pass
 
-def task_exceptions_trap(func):
+def exceptions_trap(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except NotFound:
             raise TaskNotFound
-        except SQLAlchemyError:
-            raise TransactionError
-    return wrapper
-
-def user_exceptions_trap(func):
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except NotFound:
-            raise UserNotFound
-        except SQLAlchemyError:
-            raise TransactionError
+        except NotUniqEmail:
+            raise EmailExists
     return wrapper

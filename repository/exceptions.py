@@ -1,6 +1,9 @@
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 class NotFound(Exception):    
+    pass
+
+class NotUniqEmail(Exception):    
     pass
 
 def exceptions_trap(func):
@@ -8,17 +11,17 @@ def exceptions_trap(func):
         try:
             result = func(*args, **kwargs)
             if result is None:                     
-                raise NotFound(f"{func.__name__}: object not found")
+                raise NotFound
             return result
-        except SQLAlchemyError as e:
-            raise NotFound(f"Database error: {e}")
+        except SQLAlchemyError:
+            raise NotFound
     return wrapper
 
 def trans_exceptions_trap(func):
     def wrapper(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
-        except NotFound:
-            raise SQLAlchemyError        
-        return result
+            return result
+        except IntegrityError:
+            raise NotUniqEmail
     return wrapper

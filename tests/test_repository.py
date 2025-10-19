@@ -1,6 +1,6 @@
 from datetime import datetime
 import pytest
-from repository.exceptions import NotFound
+from repository.exceptions import NotFound, NotUniqEmail
 from repository.repository import AbstractRepository
 from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate, UserCreate as dtoUCreate
 
@@ -69,9 +69,16 @@ def test_notSuccess_login(repo_user: AbstractRepository, add_user):
 def test_success_add_user(repo_user: AbstractRepository, add_user):
     user = dtoUCreate(
                     name = "Don Test",
-                    email = "dontest@exam.com",
+                    email = "dontest2@exam.com",
                     password_hash = "dontest@exam.com")   
     created = repo_user.create_user(user)
     assert created is not None
 
-# как првоерить создание юзера, в случае если он вернул None? Такое возможно вообще?
+def test_notSuccess_add_user(repo_user: AbstractRepository, add_user):
+    user = dtoUCreate(
+                    name = "Don Test",
+                    email = "dontest@exam.com",
+                    password_hash = "dontest@exam.com")
+    with pytest.raises(NotUniqEmail) as exc_info:
+        repo_user.create_user(user)
+    assert isinstance(exc_info.value, NotUniqEmail)
