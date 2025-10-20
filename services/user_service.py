@@ -29,11 +29,12 @@ class UsersService:
             raise IncorrectName    
         if not re.match(r"^(?=.*[A-Z])(?=.*\d).+$", user.password_hash):
             raise IncorrectPassword
-        user_data = dtoUCreate(
-            name=user.name,
-            email=user.email,
-            password_hash = PasswordHasher().hash(user.password_hash),
-        )
+        user_data = {
+            "name"  : user.name,
+            "email" : user.email,
+            "password_hash" : PasswordHasher().hash(user.password_hash)
+
+        }
         return self.users_repo.create_user(user_data)
 
     @exceptions_trap

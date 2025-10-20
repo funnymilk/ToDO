@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from api.dto import UserCreate as dtoUCreate
 from repository.exceptions import NotFound, exceptions_trap, trans_exceptions_trap
 
 
@@ -123,7 +122,7 @@ class SQLAlchemyRepository(AbstractRepository):
         return user
     
     @trans_exceptions_trap
-    def create_user(self, user_data: dtoUCreate):
+    def create_user(self, user_data: dict):
         new_user = self.model(**user_data) 
         self.db.add(new_user)
         self.db.commit()

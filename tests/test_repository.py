@@ -1,9 +1,6 @@
 from datetime import datetime
 import pytest
 from repository.exceptions import NotFound, NotUniqEmail
-from repository.repository import AbstractRepository
-from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate, UserCreate as dtoUCreate
-from sqlalchemy.exc import IntegrityError
 
 # ---------------------------------------------------------TASK TEST---------------------------------------------
 
