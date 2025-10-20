@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from datetime import datetime
 from fastapi import Query
 from repository.exceptions import exceptions_trap
@@ -11,7 +12,8 @@ class TasksService:
 
     @exceptions_trap
     def create_task(self, task: dtoTCreate):
-        return self.tasks_repo.add_one(task)
+        task_data = {k: v for k, v in asdict(task).items() if v is not None}
+        return self.tasks_repo.add_one(task_data)
 
     @exceptions_trap
     def get_task(self, task_id: int):        
@@ -19,7 +21,7 @@ class TasksService:
         return task
     
     @exceptions_trap
-    def get_all(self, isdone: bool | None = Query(None)):
+    def get_all(self, isdone: bool | None = None):
         if isdone is not None:
             task = self.tasks_repo.get_isdone(isdone) 
         else:
@@ -30,16 +32,16 @@ class TasksService:
     def get_user_tasks(
         self,
         user_id: int,
-        check: bool | None = Query(None),
-        deadline: datetime | None = Query(None)
+        check: bool | None = None,
+        deadline: datetime | None = None
     ):    
         task = self.tasks_repo.get_user_tasks(user_id, check, deadline)
         return task
     
     @exceptions_trap
-    def up_task(self, task_id: int, data: dtoTUpdate):
-        task = self.tasks_repo.up_task(task_id, data)
-        return task
+    def up_task(self, task_id: int, task: dtoTUpdate):
+        update_data = {k: v for k, v in asdict(task).items() if v is not None}
+        return self.tasks_repo.up_task(task_id, update_data)
     
     @exceptions_trap
     def del_task(self, task_id: int):

@@ -19,9 +19,11 @@ def exceptions_trap(func):
 
 def trans_exceptions_trap(func):
     def wrapper(*args, **kwargs):
+        self = args[0]
         try:
             result = func(*args, **kwargs)
             return result
         except IntegrityError:
+            self.db.rollback()
             raise NotUniqEmail
     return wrapper

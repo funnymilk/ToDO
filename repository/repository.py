@@ -1,8 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import asdict
 from datetime import datetime, timedelta
-from fastapi import Query
-from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate
 from api.dto import UserCreate as dtoUCreate
 from repository.exceptions import NotFound, exceptions_trap, trans_exceptions_trap
 
@@ -60,9 +57,8 @@ class SQLAlchemyRepository(AbstractRepository):
         return task
     
     @exceptions_trap
-    def add_one(self, task: dtoTCreate):
-        task_data = asdict(task)
-        new_task = self.model(**task_data) 
+    def add_one(self, task: dict):
+        new_task = self.model(**task) 
         self.db.add(new_task)
         self.db.commit()
         self.db.refresh(new_task)
@@ -82,8 +78,8 @@ class SQLAlchemyRepository(AbstractRepository):
     def get_user_tasks(
         self,    
         user_id: int, 
-        check: bool | None = Query(None),
-        deadline: datetime | None = Query(None)
+        check: bool | None = None,
+        deadline: datetime | None = None
     ):        
         query = self.db.query(self.model).filter(self.model.owner_id == user_id)
         
@@ -102,11 +98,11 @@ class SQLAlchemyRepository(AbstractRepository):
         return task
     
     @exceptions_trap
-    def up_task(self, task_id: int, data: dtoTUpdate):        
+    def up_task(self, task_id: int, data: dict):        
         task = self.db.get(self.model, task_id)
         if task == None:
             raise NotFound
-        for field, value in asdict(data).items():
+        for field, value in data.items():
             setattr(task, field, value)
         self.db.commit()
         self.db.refresh(task)
@@ -127,8 +123,7 @@ class SQLAlchemyRepository(AbstractRepository):
         return user
     
     @trans_exceptions_trap
-    def create_user(self, user: dtoUCreate):
-        user_data = asdict(user)
+    def create_user(self, user_data: dtoUCreate):
         new_user = self.model(**user_data) 
         self.db.add(new_user)
         self.db.commit()
