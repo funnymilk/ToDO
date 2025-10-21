@@ -1,6 +1,6 @@
 import re
 from argon2 import PasswordHasher
-from models.models import User
+from argon2.exceptions import VerifyMismatchError
 from repository.exceptions import NotFound
 from repository.repository import AbstractRepository
 from sqlalchemy.orm import Session
@@ -22,7 +22,6 @@ class UsersService:
             email_exists = self.users_repo.login_check(user.email)
         except NotFound:
             email_exists = False
-        print("zaebis, email = ", email_exists)
         if email_exists:
             raise EmailExists            
         if user.name.strip().lower() in ["admin", "test", "user"]:
@@ -41,7 +40,9 @@ class UsersService:
     def login(self, loginData: dtoLogin):
         user = self.users_repo.login_check(loginData.email)
         # хэшируем введённый пароль и сравниваем bcrypt.verify(payload.password, user.password_hash)
-        if not PasswordHasher().verify(user.password_hash, loginData.password):
+        try:
+            PasswordHasher().verify(user.password_hash, loginData.password)
+        except VerifyMismatchError:
             raise InputIncorrectPassword
         return {
             "message": "Успешный вход",

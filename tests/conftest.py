@@ -1,5 +1,6 @@
 
 from datetime import datetime
+from unittest.mock import Mock
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -7,9 +8,10 @@ from sqlalchemy.orm.session import Session
 from db.Base import Base
 from repository.repository import AbstractRepository
 from repository.task_Repository import TasksRepository
-#from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate, UserCreate as dtoUCreate
 from repository.user_Repository import UsersRepository
 from sqlalchemy import event
+
+from services.user_service import UsersService
 
 
 @pytest.fixture
@@ -54,3 +56,16 @@ def add_user(repo_user: AbstractRepository):
         "password_hash" : "password"
     }                    
     return repo_user.create_user(user)
+
+# ---------------------------------------------------SERVICES---------------------------------------------- #
+
+@pytest.fixture
+def fake_repo():
+    return Mock()
+
+@pytest.fixture
+def user_service(fake_repo):
+    """Сервис без реальной БД и репозитория."""
+    service = UsersService.__new__(UsersService)
+    service.users_repo = fake_repo
+    return service

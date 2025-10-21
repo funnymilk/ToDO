@@ -1,6 +1,5 @@
-import sqlite3
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from psycopg2.errors import UniqueViolation, ForeignKeyViolation, NotNullViolation
+from psycopg2.errors import UniqueViolation, ForeignKeyViolation
 
 class NotFound(Exception):    
     pass

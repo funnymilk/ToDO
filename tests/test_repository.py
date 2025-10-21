@@ -92,9 +92,7 @@ def test_partial_update_task(repo_task, add_user, add_task):
         "description" : None
     }
     ts = repo_task.get_one(add_task.id)
-    print(ts.description)
     updated = repo_task.up_task(add_task.id, data)
-    print(updated.description)
     assert updated.title == "Updated title"
     assert updated.description == None  # старое значение
     assert updated.is_done == add_task.is_done  # старое значение
@@ -141,6 +139,4 @@ def test_notSuccess_add_user(repo_user, add_user):
     with pytest.raises(NotUniqEmail):
         repo_user.create_user(user)
     # Убедиться, что сессия чистая 
-    assert repo_user.db.query(repo_user.model).count() == 1    
-
-# ----------------------------------------------EXCEPTIONS--------------------------------------
+    assert repo_user.db.query(repo_user.model).count() == 1
