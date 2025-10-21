@@ -55,7 +55,7 @@ class SQLAlchemyRepository(AbstractRepository):
         task = self.db.get(self.model, task_id)
         return task
     
-    @exceptions_trap
+    @trans_exceptions_trap
     def add_one(self, task: dict):
         new_task = self.model(**task) 
         self.db.add(new_task)

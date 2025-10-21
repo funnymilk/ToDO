@@ -9,11 +9,18 @@ from repository.repository import AbstractRepository
 from repository.task_Repository import TasksRepository
 #from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate, UserCreate as dtoUCreate
 from repository.user_Repository import UsersRepository
+from sqlalchemy import event
 
 
 @pytest.fixture
 def session():
     engine = create_engine("sqlite:///:memory:")  # in-memory база
+
+    @event.listens_for(engine, "connect")
+    def enable_foreign_keys(dbapi_connection, connection_record):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.close()
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -34,7 +41,7 @@ def add_task(repo_task: AbstractRepository):
         "title": "Test task",
         "description": "Test description",
         "is_done": False,
-        "owner_id": 9,
+        "owner_id": 1,
         "deadline": datetime(2025, 12, 10, 13, 45)
     }
     return repo_task.add_one(task)
@@ -44,6 +51,6 @@ def add_user(repo_user: AbstractRepository):
     user = {
         "name" : "Don Test",
         "email" : "dontest@exam.com",
-        "password_hash" : "dontest@exam.com"
+        "password_hash" : "password"
     }                    
     return repo_user.create_user(user)

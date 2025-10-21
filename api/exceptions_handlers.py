@@ -1,6 +1,7 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from repository.exceptions import ForeignKeyError
 from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, TaskNotFound, TransactionError, UserNotFound
 
 def register_exception_handlers(app):
@@ -31,4 +32,8 @@ def register_exception_handlers(app):
     @app.exception_handler(TransactionError)
     def task_not_found_handler(request: Request, exc: TransactionError): 
         return JSONResponse(status_code=404, content={"detail": "Ошибка транзакции"})
+    
+    @app.exception_handler(ForeignKeyError)
+    def task_not_found_handler(request: Request, exc: ForeignKeyError): 
+        return JSONResponse(status_code=404, content={"detail": "нет такого пользователя"})
     

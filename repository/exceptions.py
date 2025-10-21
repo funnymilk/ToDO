@@ -1,9 +1,14 @@
+import sqlite3
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from psycopg2.errors import UniqueViolation, ForeignKeyViolation, NotNullViolation
 
 class NotFound(Exception):    
     pass
 
 class NotUniqEmail(Exception):    
+    pass
+
+class ForeignKeyError(Exception):    
     pass
 
 def exceptions_trap(func):
@@ -23,7 +28,20 @@ def trans_exceptions_trap(func):
         try:
             result = func(*args, **kwargs)
             return result
-        except IntegrityError:
+        except IntegrityError as e:
             self.db.rollback()
-            raise NotUniqEmail
+            orig = e.orig
+            msg = str(orig).lower()
+
+            if "unique" in msg:
+                raise NotUniqEmail from e
+            elif "foreign key" in msg:
+                raise ForeignKeyError from e
+            elif isinstance(orig, UniqueViolation):
+                raise NotUniqEmail from e
+            elif isinstance(orig, ForeignKeyViolation):
+                raise ForeignKeyError from e
+            
+        except SQLAlchemyError:
+            raise NotFound
     return wrapper

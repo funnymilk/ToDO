@@ -21,6 +21,9 @@ class TaskNotFound(Exception):
 class TransactionError(Exception):
     pass
 
+class ForeignKeyError(Exception):
+    pass
+
 def exceptions_trap(func):
     def wrapper(*args, **kwargs):
         try:
@@ -29,4 +32,6 @@ def exceptions_trap(func):
             raise TaskNotFound
         except NotUniqEmail:
             raise EmailExists
+        except ForeignKeyError:
+            raise ForeignKeyError
     return wrapper

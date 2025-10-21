@@ -13,6 +13,7 @@ class TasksService:
     @exceptions_trap
     def create_task(self, task: dtoTCreate):
         task_data = {k: v for k, v in asdict(task).items() if v is not None}
+        print(task_data)
         return self.tasks_repo.add_one(task_data)
 
     @exceptions_trap
