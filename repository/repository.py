@@ -65,12 +65,12 @@ class SQLAlchemyRepository(AbstractRepository):
     
     @exceptions_trap
     def get_all(self):  
-        task = self.db.query(self.model)
+        task = self.db.query(self.model).all()
         return task
     
     @exceptions_trap
     def get_isdone(self, isdone):
-        task = self.db.query(self.model).filter(self.model.is_done == isdone)
+        task = self.db.query(self.model).filter(self.model.is_done == isdone).all()
         return task
     
     @exceptions_trap

@@ -14,7 +14,7 @@ def exceptions_trap(func):
     def wrapper(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
-            if result is None:                     
+            if not result:
                 raise NotFound
             return result
         except SQLAlchemyError:

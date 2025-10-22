@@ -23,7 +23,7 @@ class UsersService:
         except NotFound:
             email_exists = False
         if email_exists:
-            raise EmailExists            
+            raise EmailExists
         if user.name.strip().lower() in ["admin", "test", "user"]:
             raise IncorrectName    
         if not re.match(r"^(?=.*[A-Z])(?=.*\d).+$", user.password_hash):

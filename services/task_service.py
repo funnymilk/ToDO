@@ -1,10 +1,11 @@
 from dataclasses import asdict
 from datetime import datetime
 from fastapi import Query
-from repository.exceptions import exceptions_trap
 from repository.repository import AbstractRepository
 from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate
 from sqlalchemy.orm import Session
+
+from services.exceptions import exceptions_trap
 
 class TasksService:
     def __init__(self, tasks_repo_class: AbstractRepository, db: Session):
@@ -13,7 +14,6 @@ class TasksService:
     @exceptions_trap
     def create_task(self, task: dtoTCreate):
         task_data = {k: v for k, v in asdict(task).items() if v is not None}
-        print(task_data)
         return self.tasks_repo.add_one(task_data)
 
     @exceptions_trap

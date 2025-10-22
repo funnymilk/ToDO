@@ -57,12 +57,12 @@ def test_del_notExists_task(repo_task):
         repo_task.del_task(1)
 
 def test_get_all_tasks(repo_task, add_user, add_task):
-    tasks = repo_task.get_all().all()
+    tasks = repo_task.get_all()
     assert len(tasks) > 0
     assert tasks[0].title == "Test task"
 
 def test_get_isdone_tasks(repo_task, add_user, add_task):
-    done_tasks = repo_task.get_isdone(False).all()
+    done_tasks = repo_task.get_isdone(False)
     assert all(not t.is_done for t in done_tasks)
 
 def test_get_user_tasks_by_id(repo_task, repo_user, add_user, add_task):

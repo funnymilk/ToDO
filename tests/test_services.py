@@ -1,7 +1,9 @@
+from dataclasses import dataclass
+from datetime import datetime
 from argon2 import PasswordHasher
 import pytest
-from repository.exceptions import NotFound
-from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword
+from repository.exceptions import ForeignKeyError, NotFound
+from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, TaskNotFound
 
 # ---------------------------------------------------------USER TEST---------------------------------------------
 
@@ -105,3 +107,199 @@ def test_login_incorrect_password(user_service, fake_repo):
 
     with pytest.raises(InputIncorrectPassword):
         user_service.login(data)
+
+
+# ---------------------------------------------------------TASK TEST---------------------------------------------
+
+def test_create_task(task_service, fake_repo, dto_cls_crtask, response_task):
+    fake_task = dto_cls_crtask(
+        title="Test task",
+        description="Test description",
+        is_done= False,
+        owner_id= 1,
+        deadline=datetime(2025, 12, 10, 13, 45)
+    )
+
+    fake_repo.add_one.return_value = response_task
+    result = task_service.create_task(fake_task)
+
+    fake_repo.add_one.assert_called_once()
+    assert result == response_task
+
+def test_creat_incorrect_task(task_service, fake_repo, dto_cls_crtask):
+    fake_repo.add_one.side_effect = ForeignKeyError 
+    fake_task = dto_cls_crtask(
+        title="Test task",
+        description="Test description",
+        is_done= False,
+        owner_id= 1,
+        deadline=datetime(2025, 12, 10, 13, 45)
+    )
+    
+    with pytest.raises(ForeignKeyError):
+        task_service.create_task(fake_task)
+
+def test_get_task(task_service, fake_repo, response_task):
+    
+    fake_repo.get_one.return_value = response_task
+    result = task_service.get_task(response_task["task_id"])
+    assert result == response_task
+    fake_repo.get_one.assert_called_once()
+
+def test_incorrect_get_task(task_service, fake_repo):
+    fake_repo.get_one.side_effect = NotFound 
+
+    with pytest.raises(TaskNotFound):
+        task_service.get_task(12)
+
+def test_get_all(task_service, fake_repo, response_tasks):
+    fake_repo.get_all.return_value = response_tasks
+    result = task_service.get_all()
+
+    assert result == response_tasks
+    assert len(result) == 2
+    fake_repo.get_all.assert_called_once()
+
+def test_incorrect_get_all(task_service, fake_repo):
+    fake_repo.get_all.side_effect = NotFound 
+    
+    with pytest.raises(TaskNotFound):
+        task_service.get_all()
+
+
+def test_get_all_isdone(task_service, fake_repo, response_task):
+    fake_repo.get_isdone.return_value = response_task
+
+    result = task_service.get_all(False)
+
+    assert result == response_task
+    assert result["is_done"] == response_task["is_done"]
+    fake_repo.get_isdone.assert_called_once()
+
+def test_get_all_isdone_notExists(task_service, fake_repo):
+    fake_repo.get_isdone.side_effect = NotFound
+    is_done = ["True", "False"]
+
+    for bl in is_done:
+        with pytest.raises(TaskNotFound):
+            task_service.get_all(bl)
+
+    assert fake_repo.get_isdone.call_count == 2
+    assert fake_repo.get_isdone.call_args_list[0][0][0] == "True"  # аргумент первого вызова
+    assert fake_repo.get_isdone.call_args_list[1][0][0] == "False" # аргумент второго вызова
+
+
+
+def test_get_user_tasks_exists(task_service, fake_repo, response_task):
+    fake_repo.get_user_tasks.return_value = response_task
+    user_id = 1
+    result = task_service.get_user_tasks(user_id)
+    
+    assert result == response_task
+    fake_repo.get_user_tasks.assert_called_once()
+
+def test_get_user_tasks_notExists(task_service, fake_repo):
+    fake_repo.get_user_tasks.side_effect = NotFound
+    user_id = 1    
+    
+    with pytest.raises(TaskNotFound):
+        task_service.get_user_tasks(user_id)
+    fake_repo.get_user_tasks.assert_called_once()
+
+def test_get_user_tasks_isdone(task_service, fake_repo, response_task):
+    fake_repo.get_user_tasks.return_value = response_task
+    is_done = ["True", "False"]
+    user_id = 1
+    
+    for bl in is_done:
+        result = task_service.get_user_tasks(user_id, bl)
+    
+    assert result == response_task
+    assert fake_repo.get_user_tasks.call_count == 2
+    assert fake_repo.get_user_tasks.call_args_list[0][0][1] == "True"  # аргумент первого вызова
+    assert fake_repo.get_user_tasks.call_args_list[1][0][1] == "False" # аргумент второго вызова
+
+
+def test_get_user_tasks_isdone_notExists(task_service, fake_repo):
+    fake_repo.get_user_tasks.side_effect = NotFound
+    user_id = 1    
+    is_done = ["True", "False"]
+    for bl in is_done:
+        with pytest.raises(TaskNotFound):
+            task_service.get_user_tasks(user_id, bl)
+   
+    assert fake_repo.get_user_tasks.call_count == 2
+    assert fake_repo.get_user_tasks.call_args_list[0][0][1] == "True"  # аргумент первого вызова
+    assert fake_repo.get_user_tasks.call_args_list[1][0][1] == "False" # аргумент второго вызова
+
+
+def test_get_user_tasks_deadline(task_service, fake_repo, response_task):
+    fake_repo.get_user_tasks.return_value = response_task
+    deadline=datetime(2025, 12, 10, 13, 45)
+    user_id = 1
+    result = task_service.get_user_tasks(user_id, deadline)
+
+    assert result == response_task
+    fake_repo.get_user_tasks.assert_called_once()
+
+def test_get_user_tasks_deadline_notExists(task_service, fake_repo):
+    fake_repo.get_user_tasks.side_effect = NotFound
+    deadline=datetime(2025, 12, 10, 13, 45)
+    user_id = 1
+
+    with pytest.raises(TaskNotFound):
+        task_service.get_user_tasks(user_id, deadline)
+
+    fake_repo.get_user_tasks.assert_called_once()
+
+def test_task_deadline_isdone(task_service, fake_repo, response_task):
+    fake_repo.get_user_tasks.return_value = response_task
+    deadline=datetime(2025, 12, 10, 13, 45)
+    user_id = 1
+    is_done = True
+    result = task_service.get_user_tasks(user_id, is_done, deadline)
+
+    assert result == response_task
+    fake_repo.get_user_tasks.assert_called_once()
+
+def test_uptask(task_service, fake_repo, response_task, dto_cls_uptask):
+    fake_repo.up_task.return_value = response_task
+    fake_task = dto_cls_uptask(
+        title="Test task",
+        description="Test description",
+        is_done= False,
+        deadline=datetime(2025, 12, 10, 13, 45)
+    )
+    result = task_service.up_task(1, fake_task)
+    assert result == response_task
+    fake_repo.up_task.assert_called_once()
+
+def test_uptask_notExists(task_service, fake_repo, dto_cls_uptask):
+    fake_repo.up_task.side_effect = NotFound
+    fake_task = dto_cls_uptask(
+        title="Test task",
+        description="Test description",
+        is_done= False,
+        deadline=datetime(2025, 12, 10, 13, 45)
+    )
+    with pytest.raises(TaskNotFound):
+        task_service.up_task(1, fake_task)
+    fake_repo.up_task.assert_called_once()
+
+def test_deltask(task_service, fake_repo, response_task):
+    fake_repo.del_task.return_value = response_task
+
+    result = task_service.del_task(1)
+    assert result == response_task
+    fake_repo.del_task.assert_called_once()
+
+def test_deltask_notExists(task_service, fake_repo, response_task):
+    fake_repo.del_task.side_effect = NotFound
+
+    with pytest.raises(TaskNotFound):
+        task_service.del_task(1)
+    fake_repo.del_task.assert_called_once()
+
+
+
+
