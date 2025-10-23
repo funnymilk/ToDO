@@ -1,9 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from fastapi import Query
-from db.session import SessionLocal
-from models.models import User
-from schemas.schemas import TaskCreate, TaskUpdate, UserCreate
+from repository.exceptions import NotFound, exceptions_trap, trans_exceptions_trap
 
 
 class AbstractRepository(ABC):
@@ -49,31 +46,44 @@ class AbstractRepository(ABC):
     
 class SQLAlchemyRepository(AbstractRepository):
     model = None
-    db = SessionLocal()
+
+    def __init__(self, db):
+        self.db = db
+
+    @exceptions_trap
+    def get_one(self, task_id: int):
+        task = self.db.get(self.model, task_id)
+        return task
     
-    def get_one(self, task_id: int):        
-        return self.db.get(self.model, task_id)
-    
-    def add_one(self, task_data: TaskCreate):        
-        new_task = self.model(**task_data) 
+    @trans_exceptions_trap
+    def add_one(self, task: dict):
+        new_task = self.model(**task) 
         self.db.add(new_task)
         self.db.commit()
         self.db.refresh(new_task)
         return new_task
     
+    @exceptions_trap
     def get_all(self):  
-        return self.db.query(self.model)
+        task = self.db.query(self.model).all()
+        return task
     
+    @exceptions_trap
     def get_isdone(self, isdone):
-        return self.db.query(self.model).filter(self.model.is_done == isdone)
+        task = self.db.query(self.model).filter(self.model.is_done == isdone).all()
+        return task
     
+    @exceptions_trap
     def get_user_tasks(
         self,    
         user_id: int, 
-        check: bool | None = Query(None),
-        deadline: datetime | None = Query(None)
-    ):
+        check: bool | None = None,
+        deadline: datetime | None = None
+    ):        
         query = self.db.query(self.model).filter(self.model.owner_id == user_id)
+        
+        if query == None:
+            raise NotFound
         
         if check is not None:
             query = self.db.query(self.model).filter(self.model.is_done == check)
@@ -82,32 +92,43 @@ class SQLAlchemyRepository(AbstractRepository):
             start = deadline
             end = deadline + timedelta(minutes=1)
             query = self.db.query(self.model).filter(self.model.deadline >= start, self.model.deadline < end)
-        return query.all()
+
+        task = query.all()
+        return task
     
-    def up_task(self, task_id: int, payload: TaskUpdate):
-        task = self.db.get(self.model, task_id)        
-        data = payload.model_dump(exclude_unset=True)
+    @exceptions_trap
+    def up_task(self, task_id: int, data: dict):        
+        task = self.db.get(self.model, task_id)
+        if task == None:
+            raise NotFound
         for field, value in data.items():
             setattr(task, field, value)
         self.db.commit()
         self.db.refresh(task)
         return task
     
+    @exceptions_trap
     def del_task(self, task_id: int):
         task = self.db.get(self.model, task_id)
+        if task is None:
+            raise NotFound
         self.db.delete(task)
         self.db.commit()
         return task
     
+    @exceptions_trap
     def get_user(self, user_id: int):
-        return self.db.get(self.model, user_id)
+        user = self.db.get(self.model, user_id)
+        return user
     
-    def create_user(self, user_data: User):        
-        #new_user = self.model(user_data) 
-        self.db.add(user_data)
+    @trans_exceptions_trap
+    def create_user(self, user_data: dict):
+        new_user = self.model(**user_data) 
+        self.db.add(new_user)
         self.db.commit()
-        self.db.refresh(user_data)
-        return user_data
+        self.db.refresh(new_user)
+        return new_user
     
+    @exceptions_trap 
     def login_check(self, email: str):
         return self.db.query(self.model).filter(self.model.email == email).first()
