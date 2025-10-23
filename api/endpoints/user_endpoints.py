@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, status
 from api.dependencies import users_service
 from schemas.schemas import LoginData, UserCreate, UserOut
 from services.user_service import UsersService
+from api.dto import UserCreate as dtoUCreate, LoginData as dtoLogin
 
 router = APIRouter()
 
@@ -12,8 +13,13 @@ def get_user_endpoind(user_id: int, users_service: Annotated[UsersService, Depen
 
 @router.post("/create", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user_endpoind(user: UserCreate, authService: Annotated[UsersService, Depends(users_service)]):   
-    return authService.create_user(user)
+    createUserData = user.model_dump()
+    data = dtoUCreate(**createUserData)
+    return authService.create_user(data)
 
 @router.post("/login")
 def login_endpoint(user: LoginData, authService: Annotated[UsersService, Depends(users_service)]):
-    return authService.login(user)
+    loginData = user.model_dump()
+    data = dtoLogin(**loginData)
+    return authService.login(data)
+
