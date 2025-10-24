@@ -15,23 +15,15 @@ class IncorrectPassword(Exception):
 class InputIncorrectPassword(Exception):
     pass
 
-class TaskNotFound(Exception):
-    pass
-
 class TransactionError(Exception):
     pass
 
-class ForeignKeyError(Exception):
-    pass
-
-def exceptions_trap(func):
+def user_exceptions_trap(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except NotFound:
-            raise TaskNotFound
         except NotUniqEmail:
             raise EmailExists
-        except ForeignKeyError:
-            raise ForeignKeyError
+        except NotFound:
+            raise UserNotFound
     return wrapper

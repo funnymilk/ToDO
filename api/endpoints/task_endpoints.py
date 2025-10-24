@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from datetime import datetime
 from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Response, status
@@ -24,7 +25,7 @@ def get_alltasks_endpoind(tasks_service: Annotated[TasksService, Depends(tasks_s
 
 @router.get("/users/{user_id}", response_model=list[TasksToOwner])
 def get_user_tasks_endpoind(
-    user_id: int, 
+    user_id: int,
     tasks_service: Annotated[TasksService, Depends(tasks_service)], 
     check: bool | None = Query(None),
     deadline: datetime | None = Query(None)
@@ -35,7 +36,8 @@ def get_user_tasks_endpoind(
 def up_task_endpoind(task_id: int, data: TaskUpdate, tasks_service: Annotated[TasksService, Depends(tasks_service)]):
     update_data = data.model_dump(exclude_unset=True)
     data = dtoTUpdate(**update_data)
-    return tasks_service.up_task(task_id, data)
+    update_data = {k: v for k, v in asdict(data).items() if v is not None}
+    return tasks_service.up_task(task_id, update_data)
 
 @router.delete("/{task_id}")
 def del_task_endpoind(task_id: int, tasks_service: Annotated[TasksService, Depends(tasks_service)]):

@@ -2,7 +2,8 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from repository.exceptions import ForeignKeyError
-from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, TaskNotFound, TransactionError, UserNotFound
+from services.user_exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, TransactionError, UserNotFound
+from services.task_exceptions import TaskNotFound
 
 def register_exception_handlers(app):
     @app.exception_handler(TaskNotFound)

@@ -19,10 +19,11 @@ class UserOut(BaseModel):
 
 class TaskCreate(BaseModel):
     title: str
-    description: str
-    is_done: bool
+    description: str | None = None
+    is_done: bool | None = None
     deadline: datetime | None = None
     owner_id: int
+
     @field_validator("deadline", mode="before")
     def parse_deadline(cls, value): 
         if isinstance(value, str):

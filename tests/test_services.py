@@ -3,7 +3,8 @@ from datetime import datetime
 from argon2 import PasswordHasher
 import pytest
 from repository.exceptions import ForeignKeyError, NotFound
-from services.exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, TaskNotFound
+from services.user_exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword 
+from services.task_exceptions import NotFoundUserForTask, TaskNotFound
 
 # ---------------------------------------------------------USER TEST---------------------------------------------
 
@@ -136,7 +137,7 @@ def test_creat_incorrect_task(task_service, fake_repo, dto_cls_crtask):
         deadline=datetime(2025, 12, 10, 13, 45)
     )
     
-    with pytest.raises(ForeignKeyError):
+    with pytest.raises(NotFoundUserForTask):
         task_service.create_task(fake_task)
 
 def test_get_task(task_service, fake_repo, response_task):
