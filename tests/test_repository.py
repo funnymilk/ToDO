@@ -1,6 +1,7 @@
 from datetime import datetime
 import pytest
-from repository.exceptions import ForeignKeyError, NotFound, NotUniqEmail
+from repository.user_exceptions import UserNotFoundRepo, NotUniqEmailRepo
+from repository.task_exceptions import NotFoundUserForTaskRepo, TaskNotFoundRepo
 
 # ---------------------------------------------------------TASK TEST---------------------------------------------
 
@@ -23,7 +24,7 @@ def test_create_invalid_task(repo_task, add_user, add_task):
         "owner_id": 5,
         "deadline": datetime(2025, 12, 10, 13, 45)
     }    
-    with pytest.raises(ForeignKeyError):
+    with pytest.raises(NotFoundUserForTaskRepo):
         repo_task.add_one(task_data)
 
 
@@ -44,16 +45,16 @@ def test_update_notExists_task(repo_task):
         "title" : "test",
         "description" : "ANOTHER ONE TEST"
     }
-    with pytest.raises(NotFound):
+    with pytest.raises(TaskNotFoundRepo):
         repo_task.up_task(12, task_data)
 
 def test_del_exists_task(repo_task, add_user, add_task):
     repo_task.del_task(add_task.id)
-    with pytest.raises(NotFound):
+    with pytest.raises(TaskNotFoundRepo):
         repo_task.get_one(add_task.id)
     
 def test_del_notExists_task(repo_task):
-    with pytest.raises(NotFound):
+    with pytest.raises(TaskNotFoundRepo):
         repo_task.del_task(1)
 
 def test_get_all_tasks(repo_task, add_user, add_task):
@@ -110,7 +111,7 @@ def test_get_exists_User(repo_user, add_user):
     assert create is not None  
 
 def test_get_notExists_User(repo_user):
-    with pytest.raises(NotFound):
+    with pytest.raises(UserNotFoundRepo):
         repo_user.get_user(1)
 
 def test_success_login(repo_user, add_user):
@@ -118,7 +119,7 @@ def test_success_login(repo_user, add_user):
     assert login_check is not None  
 
 def test_notSuccess_login(repo_user, add_user):
-    with pytest.raises(NotFound):
+    with pytest.raises(UserNotFoundRepo):
         repo_user.login_check("sobaka@sobaka.com")
 
 def test_success_add_user(repo_user, add_user):
@@ -136,7 +137,7 @@ def test_notSuccess_add_user(repo_user, add_user):
         "email" : "dontest@exam.com",
         "password_hash" : "dontest@exam.com"
     }
-    with pytest.raises(NotUniqEmail):
+    with pytest.raises(NotUniqEmailRepo):
         repo_user.create_user(user)
     # Убедиться, что сессия чистая 
     assert repo_user.db.query(repo_user.model).count() == 1

@@ -18,7 +18,7 @@ class Task(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
-    description = Column(String)
+    description = Column(String, nullable=True) 
     is_done = Column(Boolean, default=False)
     deadline = Column(DateTime, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"))  # связь с пользователем

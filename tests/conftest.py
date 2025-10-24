@@ -7,9 +7,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 from db.Base import Base
-from repository.repository import AbstractRepository
-from repository.task_Repository import TasksRepository
-from repository.user_Repository import UsersRepository
+from repository.repository import AbstractRepositoryUser, AbstractRepositoryTask
+from repository.task_Repository import SQLTasksRepository
+from repository.user_Repository import SQLUsersRepository
 from sqlalchemy import event
 
 from services.task_service import TasksService
@@ -32,15 +32,15 @@ def session():
     session.close()
 
 @pytest.fixture
-def repo_task(session: Session) -> AbstractRepository:    
-    return TasksRepository(session)
+def repo_task(session: Session) -> AbstractRepositoryTask:    
+    return SQLTasksRepository(session)
 
 @pytest.fixture
-def repo_user(session: Session) -> AbstractRepository:    
-    return UsersRepository(session)
+def repo_user(session: Session) -> AbstractRepositoryUser:    
+    return SQLUsersRepository(session)
 
 @pytest.fixture
-def add_task(repo_task: AbstractRepository):
+def add_task(repo_task: AbstractRepositoryTask):
     task = {
         "title": "Test task",
         "description": "Test description",
@@ -51,7 +51,7 @@ def add_task(repo_task: AbstractRepository):
     return repo_task.add_one(task)
 
 @pytest.fixture
-def add_user(repo_user: AbstractRepository):
+def add_user(repo_user: AbstractRepositoryUser):
     user = {
         "name" : "Don Test",
         "email" : "dontest@exam.com",
@@ -136,3 +136,17 @@ def dto_cls_uptask():
         }
     })
     return dataclass(cls)
+
+# ---------------------------------------------------ENDPOINTS---------------------------------------------- #
+
+@pytest.fixture
+def usersService():
+    return Mock()
+"""
+@pytest.fixture
+def user_service(fake_repo):
+
+
+@pytest.fixture
+def task_service(fake_repo):
+"""
