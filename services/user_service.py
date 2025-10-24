@@ -1,7 +1,7 @@
 import re
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from repository.exceptions import NotFound
+from repository.user_exceptions import UserNotFoundRepo
 from repository.repository import AbstractRepositoryUser
 from sqlalchemy.orm import Session
 from api.dto import UserCreate as dtoUCreate, LoginData as dtoLogin
@@ -20,7 +20,7 @@ class UsersService:
     def create_user(self, user: dtoUCreate):
         try:
             email_exists = self.users_repo.login_check(user.email)
-        except NotFound:
+        except UserNotFoundRepo:
             email_exists = False
         if email_exists:
             raise EmailExists

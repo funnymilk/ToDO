@@ -1,12 +1,9 @@
-from repository.exceptions import NotFound, NotUniqEmail
+from repository.user_exceptions import UserNotFoundRepo, NotUniqEmailRepo
 
 class UserNotFound(Exception):
     pass
     
 class EmailExists(Exception):
-    pass
-
-class IncorrectName(Exception):
     pass
 
 class IncorrectPassword(Exception):
@@ -15,15 +12,15 @@ class IncorrectPassword(Exception):
 class InputIncorrectPassword(Exception):
     pass
 
-class TransactionError(Exception):
+class IncorrectName(Exception):
     pass
 
 def user_exceptions_trap(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except NotUniqEmail:
+        except NotUniqEmailRepo:
             raise EmailExists
-        except NotFound:
+        except UserNotFoundRepo:
             raise UserNotFound
     return wrapper

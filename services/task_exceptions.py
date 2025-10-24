@@ -1,4 +1,4 @@
-from repository.exceptions import ForeignKeyError, NotFound
+from repository.task_exceptions import TaskNotFoundRepo
 
 
 class TaskNotFound(Exception):
@@ -11,9 +11,9 @@ def task_exceptions_trap(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except NotFound:
+        except TaskNotFoundRepo:
             raise TaskNotFound
-        except ForeignKeyError:
+        except NotFoundUserForTask:
             raise NotFoundUserForTask
     return wrapper
 

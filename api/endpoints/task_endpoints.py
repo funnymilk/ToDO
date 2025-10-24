@@ -32,7 +32,7 @@ def get_user_tasks_endpoind(
 ):
     return tasks_service.get_user_tasks(user_id, check, deadline)
 
-@router.post("/{task_id}/up", response_model=TaskOut)
+@router.patch("/{task_id}/up", response_model=TaskOut)
 def up_task_endpoind(task_id: int, data: TaskUpdate, tasks_service: Annotated[TasksService, Depends(tasks_service)]):
     update_data = data.model_dump(exclude_unset=True)
     data = dtoTUpdate(**update_data)
