@@ -1,4 +1,4 @@
-from repository.task_exceptions import TaskNotFoundRepo
+from repository.task_exceptions import NotFoundUserForTaskRepo, TaskNotFoundRepo
 
 
 class TaskNotFound(Exception):
@@ -13,7 +13,7 @@ def task_exceptions_trap(func):
             return func(*args, **kwargs)
         except TaskNotFoundRepo:
             raise TaskNotFound
-        except NotFoundUserForTask:
+        except NotFoundUserForTaskRepo:
             raise NotFoundUserForTask
     return wrapper
 

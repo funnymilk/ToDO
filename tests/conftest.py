@@ -1,20 +1,24 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
+from api.dependencies import tasks_service, users_service
 from db.Base import Base
 from repository.repository import AbstractRepositoryUser, AbstractRepositoryTask
 from repository.task_Repository import SQLTasksRepository
 from repository.user_Repository import SQLUsersRepository
 from sqlalchemy import event
-
+from schemas.schemas import UserOut
 from services.task_service import TasksService
 from services.user_service import UsersService
-
+from api.router import api_router
+from api.exceptions_handlers import register_exception_handlers
 
 @pytest.fixture
 def session():
@@ -138,15 +142,54 @@ def dto_cls_uptask():
     return dataclass(cls)
 
 # ---------------------------------------------------ENDPOINTS---------------------------------------------- #
+@pytest.fixture
+def app():
+    """Тестовое FastAPI приложение"""
+    test_app = FastAPI()    
+    # Подключаем только нужные роутеры без инициализации БД    
+    test_app.include_router(api_router)
+    register_exception_handlers(test_app)
+    return test_app
 
 @pytest.fixture
-def usersService():
-    return Mock()
-"""
+def mock_users_service():
+    """Мок UsersService с предопределёнными ответами"""
+    mock = MagicMock()
+    # Настройка ответа метода get_user
+    return mock
+
 @pytest.fixture
-def user_service(fake_repo):
+def mock_tasks_service():
+    """Мок UsersService с предопределёнными ответами"""
+    mock = MagicMock()
+    # Настройка ответа метода get_user
+    return mock
 
 
 @pytest.fixture
-def task_service(fake_repo):
-"""
+def client(app, mock_users_service):
+    """Тестовый клиент FastAPI с мокнутым UsersService"""    
+    # Функция, которая заменит реальную зависимость
+    def override_users_service():
+        return mock_users_service    
+    # Переопределяем зависимость
+    app.dependency_overrides[users_service] = override_users_service    
+    # Создаём тестовый клиент
+    client = TestClient(app)    
+    yield client    
+    # Очищаем переопределения после теста
+    app.dependency_overrides.clear()
+
+@pytest.fixture
+def task_client(app, mock_tasks_service):
+    """Тестовый клиент FastAPI с мокнутым UsersService"""    
+    # Функция, которая заменит реальную зависимость
+    def override_task_service():
+        return mock_tasks_service    
+    # Переопределяем зависимость
+    app.dependency_overrides[tasks_service] = override_task_service    
+    # Создаём тестовый клиент
+    client = TestClient(app)    
+    yield client    
+    # Очищаем переопределения после теста
+    app.dependency_overrides.clear()

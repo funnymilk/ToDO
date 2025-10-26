@@ -24,7 +24,7 @@ class SQLTasksRepository(AbstractRepositoryTask):
         return new_task
     
     @task_exceptions_trap
-    def get_all(self):  
+    def get_all(self):
         task = self.db.query(self.model).all()
         return task
     
