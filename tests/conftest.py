@@ -1,20 +1,24 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
+from api.dependencies import tasks_service, users_service
 from db.Base import Base
-from repository.repository import AbstractRepository
-from repository.task_Repository import TasksRepository
-from repository.user_Repository import UsersRepository
+from repository.repository import AbstractRepositoryUser, AbstractRepositoryTask
+from repository.task_Repository import SQLTasksRepository
+from repository.user_Repository import SQLUsersRepository
 from sqlalchemy import event
-
+from schemas.schemas import UserOut
 from services.task_service import TasksService
 from services.user_service import UsersService
-
+from api.router import api_router
+from api.exceptions_handlers import register_exception_handlers
 
 @pytest.fixture
 def session():
@@ -32,15 +36,15 @@ def session():
     session.close()
 
 @pytest.fixture
-def repo_task(session: Session) -> AbstractRepository:    
-    return TasksRepository(session)
+def repo_task(session: Session) -> AbstractRepositoryTask:    
+    return SQLTasksRepository(session)
 
 @pytest.fixture
-def repo_user(session: Session) -> AbstractRepository:    
-    return UsersRepository(session)
+def repo_user(session: Session) -> AbstractRepositoryUser:    
+    return SQLUsersRepository(session)
 
 @pytest.fixture
-def add_task(repo_task: AbstractRepository):
+def add_task(repo_task: AbstractRepositoryTask):
     task = {
         "title": "Test task",
         "description": "Test description",
@@ -51,7 +55,7 @@ def add_task(repo_task: AbstractRepository):
     return repo_task.add_one(task)
 
 @pytest.fixture
-def add_user(repo_user: AbstractRepository):
+def add_user(repo_user: AbstractRepositoryUser):
     user = {
         "name" : "Don Test",
         "email" : "dontest@exam.com",
@@ -136,3 +140,56 @@ def dto_cls_uptask():
         }
     })
     return dataclass(cls)
+
+# ---------------------------------------------------ENDPOINTS---------------------------------------------- #
+@pytest.fixture
+def app():
+    """Тестовое FastAPI приложение"""
+    test_app = FastAPI()    
+    # Подключаем только нужные роутеры без инициализации БД    
+    test_app.include_router(api_router)
+    register_exception_handlers(test_app)
+    return test_app
+
+@pytest.fixture
+def mock_users_service():
+    """Мок UsersService с предопределёнными ответами"""
+    mock = MagicMock()
+    # Настройка ответа метода get_user
+    return mock
+
+@pytest.fixture
+def mock_tasks_service():
+    """Мок UsersService с предопределёнными ответами"""
+    mock = MagicMock()
+    # Настройка ответа метода get_user
+    return mock
+
+
+@pytest.fixture
+def client(app, mock_users_service):
+    """Тестовый клиент FastAPI с мокнутым UsersService"""    
+    # Функция, которая заменит реальную зависимость
+    def override_users_service():
+        return mock_users_service    
+    # Переопределяем зависимость
+    app.dependency_overrides[users_service] = override_users_service    
+    # Создаём тестовый клиент
+    client = TestClient(app)    
+    yield client    
+    # Очищаем переопределения после теста
+    app.dependency_overrides.clear()
+
+@pytest.fixture
+def task_client(app, mock_tasks_service):
+    """Тестовый клиент FastAPI с мокнутым UsersService"""    
+    # Функция, которая заменит реальную зависимость
+    def override_task_service():
+        return mock_tasks_service    
+    # Переопределяем зависимость
+    app.dependency_overrides[tasks_service] = override_task_service    
+    # Создаём тестовый клиент
+    client = TestClient(app)    
+    yield client    
+    # Очищаем переопределения после теста
+    app.dependency_overrides.clear()
