@@ -1,6 +1,6 @@
 # 3) Pydantic-модели
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_serializer, field_validator
 
 class LoginData(BaseModel):
     email: str
@@ -19,10 +19,11 @@ class UserOut(BaseModel):
 
 class TaskCreate(BaseModel):
     title: str
-    description: str
-    is_done: bool
+    description: str | None = None
+    is_done: bool | None = None
     deadline: datetime | None = None
     owner_id: int
+
     @field_validator("deadline", mode="before")
     def parse_deadline(cls, value): 
         if isinstance(value, str):
@@ -39,11 +40,12 @@ class TaskOut(BaseModel):
     is_done: bool
     owner_id: int
     deadline: datetime | None = None
-    class Config:
-        from_attributes = True
-        json_encoders = {
-            datetime: lambda v: v.strftime("%Y-%m-%d %H:%M")
-        }
+    model_config = {"from_attributes": True}
+    @field_serializer("deadline")
+    def serialize_deadline(self, value: datetime | None) -> str | None:
+        if value is not None:
+            return value.strftime("%Y-%m-%d %H:%M")
+        return None
 
 class TasksToOwner(BaseModel):
     id: int
@@ -51,11 +53,12 @@ class TasksToOwner(BaseModel):
     description: str
     is_done: bool
     deadline: datetime | None = None
-    class Config:
-        from_attributes = True
-        json_encoders = {
-            datetime: lambda v: v.strftime("%Y-%m-%d %H:%M")
-        }
+    model_config = {"from_attributes": True}
+    @field_serializer("deadline")
+    def serialize_deadline(self, value: datetime | None) -> str | None:
+        if value is not None:
+            return value.strftime("%Y-%m-%d %H:%M")
+        return None
 
 class TaskUpdate(BaseModel):
     is_done: bool | None = None
