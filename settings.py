@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     DB_PORT: int
     DB_NAME: str
     DATABASE_URL: str | None = None
+    YA_PASSWORD: str
+    YA_USER: str
 
     @property
     def db_url(self) -> str:
