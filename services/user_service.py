@@ -1,3 +1,4 @@
+import json
 import re
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
@@ -6,10 +7,12 @@ from repository.repository import AbstractRepositoryUser
 from sqlalchemy.orm import Session
 from api.dto import UserCreate as dtoUCreate, LoginData as dtoLogin
 from services.user_exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, user_exceptions_trap
+from services import producer
 
 class UsersService:
-    def __init__(self, users_repo_class: AbstractRepositoryUser, db: Session):
+    def __init__(self, users_repo_class: AbstractRepositoryUser, db: Session, send_email = producer):
         self.users_repo = users_repo_class(db)
+        #self.kafka_email 
     
     @user_exceptions_trap
     def get_user(self, user_id: int):
@@ -32,9 +35,16 @@ class UsersService:
             "name"  : user.name,
             "email" : user.email,
             "password_hash" : PasswordHasher().hash(user.password_hash)
-
         }
-        return self.users_repo.create_user(user_data)
+        new_user = self.users_repo.create_user(user_data)      
+        if new_user:
+            user_created_event = {
+                "user_name": new_user.name,
+                "email": new_user.email,
+                # остальные данные
+            }
+            producer.send_task_email('user-created-topic', new_user.name, new_user.email)
+        return new_user
 
     @user_exceptions_trap
     def login(self, loginData: dtoLogin):
