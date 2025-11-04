@@ -3,11 +3,16 @@ from confluent_kafka import Consumer, KafkaException
 import os
 import smtplib
 from email.mime.text import MIMEText
+from confluent_kafka.admin import AdminClient, NewTopic
 
-yandex_user = 'redisgame@yandex.ru'
-yandex_password = '***'
-# 1 *** This user does not have access rights to this service
-# 2 nxrkglazckhnivox This user does not have access rights to this service
+admin_client = AdminClient({'bootstrap.servers': 'kafka:9092'})
+topic_list = [NewTopic("todo-email-kafka", num_partitions=1, replication_factor=1)]
+admin_client.create_topics(topic_list)
+
+yandex_user = os.getenv('YA_USER')
+yandex_password = os.getenv('YA_PASSWORD')
+
+# удалил все пароли)0
 
 def send_email_yandex(to_email, subject, body):
     print("SMTP отправка на:", to_email)
