@@ -2,7 +2,6 @@ from confluent_kafka import Producer
 import json
 
 # Конфигурация Kafka Producer
-# пароль от Яндекс почты ***
 
 conf = {
     'bootstrap.servers': 'kafka:9092',  # адрес Kafka broker
