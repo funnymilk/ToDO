@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     DATABASE_URL_LOCAL: str | None = None
     YA_PASSWORD: str
     YA_USER: str
+    LOGLEVEL: str
 
     @property
     def db_url(self) -> str:
