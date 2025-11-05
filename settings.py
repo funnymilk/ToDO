@@ -10,12 +10,13 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int
     DB_NAME: str
-    DATABASE_URL: str | None = None
+    DATABASE_URL_LOCAL: str | None = None
+    YA_PASSWORD: str
+    YA_USER: str
+    LOGLEVEL: str
 
     @property
     def db_url(self) -> str:
-        if self.DATABASE_URL:
-            return self.DATABASE_URL
         return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     model_config = SettingsConfigDict(env_file=".env")
