@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,8 +13,8 @@ class Settings(BaseSettings):
     DB_NAME: str
     DATABASE_URL_LOCAL: str | None = None
     YA_PASSWORD: str
-    YA_USER: str
-    LOGLEVEL: str
+    YA_USER: Optional[str] = None
+    YA_PASSWORD: Optional[str] = None
 
     @property
     def db_url(self) -> str:

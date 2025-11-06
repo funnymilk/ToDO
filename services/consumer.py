@@ -21,6 +21,8 @@ def send_email_yandex(to_email, subject, body):
     msg['From'] = yandex_user
     msg['To'] = to_email
 
+    if not yandex_user or not yandex_password:
+            raise RuntimeError("SMTP creds are missing")
     with smtplib.SMTP_SSL('smtp.yandex.ru', 465) as smtp:
         smtp.login(yandex_user, yandex_password)
         smtp.sendmail(yandex_user, [to_email], msg.as_string())
