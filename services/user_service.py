@@ -13,7 +13,7 @@ from logger.logger import get_logger
 logger = get_logger(__name__)
 
 class UsersService:
-    def __init__(self, users_repo_class: AbstractRepositoryUser, db: Session, send_email = producer):
+    def __init__(self, users_repo_class: AbstractRepositoryUser, db: Session):
         self.users_repo = users_repo_class(db)
         #self.kafka_email 
     
@@ -42,9 +42,10 @@ class UsersService:
             "email" : user.email,
             "password_hash" : PasswordHasher().hash(user.password_hash)
         }
+
         new_user = self.users_repo.create_user(user_data)   
-        producer.send_task_email('user-created-topic', new_user.name, new_user.email)
-        logger.info(f"Юзер {new_user.email} создан")
+        producer.send_task_email("user-created-topic", user_data["name"], user_data["email"])
+        logger.info(f"Юзер {user_data['email']} создан")
         return new_user
 
     @user_exceptions_trap

@@ -141,6 +141,14 @@ def dto_cls_uptask():
     })
     return dataclass(cls)
 
+import pytest
+
+@pytest.fixture(autouse=True)
+def disable_email_sending(monkeypatch):
+    """Отключает вызов отправки писем через Kafka в тестах."""
+    monkeypatch.setattr("services.user_service.producer.send_task_email", lambda *args, **kwargs: None)
+
+
 # ---------------------------------------------------ENDPOINTS---------------------------------------------- #
 @pytest.fixture
 def app():
