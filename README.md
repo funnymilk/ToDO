@@ -72,15 +72,66 @@ poetry run pytest
 ---
 
 ## Структура проекта
+
 ```
-app/
- ├─ api/              # эндпоинты и схемы
- ├─ services/         # бизнес-логика
- ├─ repository/       # доступ к БД
- ├─ logger/           # логирование
- └─ main.py           # точка входа
-tests/
- └─ ...               # тесты
+├─ alembic/                  # миграции БД (env.py, versions/*)
+│   ├─ versions/             # файлы версий миграций
+│   ├─ env.py
+│   └─ README
+│
+├─ api/                      # слой API FastAPI
+│   ├─ endpoints/            # роуты (users, tasks)
+│   │   ├─ task_endpoints.py
+│   │   └─ user_endpoints.py
+│   ├─ dependencies.py       # зависимости / DI
+│   ├─ dto.py                # DTO-сущности API
+│   ├─ exceptions_handlers.py
+│   └─ router.py
+│
+├─ db/                       # слой базы данных
+│   ├─ Base.py               # декларативная база SQLAlchemy
+│   ├─ init_db.py            # инициализация БД (при необходимости)
+│   └─ session.py            # создание сессии и engine
+│
+├─ home/                     # домашняя страница / шаблоны (если нужны)
+│
+├─ logger/                   # логирование
+│   └─ logger.py
+│
+├─ logs/                     # каталог для логов (в .gitignore)
+│
+├─ models/                   # ORM-модели SQLAlchemy
+│   └─ models.py
+│
+├─ repository/               # слой доступа к данным
+│   ├─ repository.py
+│   ├─ task_repository.py
+│   ├─ user_repository.py
+│   └─ *_exceptions.py
+│
+├─ schemas/                  # Pydantic-схемы (валидация данных)
+│   └─ schemas.py
+│
+├─ services/                 # бизнес-логика
+│   ├─ task_service.py
+│   ├─ user_service.py
+│   ├─ producer.py           # Kafka producer
+│   ├─ consumer.py           # Kafka consumer
+│   └─ *_exceptions.py
+│
+├─ tests/                    # pytest-тесты
+│
+├─ .env.example              # пример переменных окружения
+├─ alembic.ini
+├─ docker-compose.yml
+├─ Dockerfile
+├─ main.py                   # точка входа FastAPI
+├─ poetry.lock
+├─ pyproject.toml
+├─ pytest.ini
+├─ settings.py               # конфигурация приложения
+└─ README.md
 ```
+
 
 ---
