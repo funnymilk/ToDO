@@ -58,5 +58,6 @@ jobs:
       - name: Apply migrations
         run: poetry run alembic upgrade head
 
-      - name: Run tests
-        run: poetry run pytest -q --maxfail=1
+      - name: Run tests with coverage
+        run: | 
+          poetry run pytest --cov=api --cov=services --cov=repository --cov=db --cov-report=term-missing
