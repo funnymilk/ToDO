@@ -29,7 +29,7 @@ jobs:
       KAFKA_ENABLED: "0"
       LOG_TO_FILE: "0"
       # Строка подключения для alembic/tests
-      DATABASE_URL_LOCAL: postgresql+psycopg://postgres:postgres@localhost:5432/todo
+      DATABASE_URL_LOCAL: postgresql+psycopg2://todo:secret@localhost:5433/todo_db
 
     steps:
       - name: Checkout
