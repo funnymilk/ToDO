@@ -46,10 +46,9 @@ poetry run alembic upgrade head
 poetry run uvicorn main:app --reload
 ```
 Приложение будет доступно по адресу: http://127.0.0.1:8000  
-Swagger UI: http://127.0.0.1:8000/docs
+Swagger UI: http://127.0.0.1:8000/docs  
 Что-бы приложение работало полноценно, надо будет отдельно запускать PostgreSQL, Kafka, да и comsumer, так что рекомендую всё таки Docker.
 
----
 ---
 
 ## Тесты
