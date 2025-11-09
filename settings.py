@@ -12,10 +12,9 @@ class Settings(BaseSettings):
     DB_PORT: int
     DB_NAME: str
     DATABASE_URL_LOCAL: str | None = None
-    YA_PASSWORD: str
     YA_USER: Optional[str] = None
     YA_PASSWORD: Optional[str] = None
-    LOGLEVEL: str
+    LOGLEVEL: str = "INFO"
 
     @property
     def db_url(self) -> str:

@@ -14,7 +14,6 @@ from repository.repository import AbstractRepositoryUser, AbstractRepositoryTask
 from repository.task_Repository import SQLTasksRepository
 from repository.user_Repository import SQLUsersRepository
 from sqlalchemy import event
-from schemas.schemas import UserOut
 from services.task_service import TasksService
 from services.user_service import UsersService
 from api.router import api_router
