@@ -5,30 +5,6 @@
 
 ---
 
-## Запуск (локально, через Poetry)
-
-### 1. Установка зависимостей
-```powershell
-poetry install
-```
-
-### 2. Применение миграций
-```powershell
-poetry run alembic upgrade head
-```
-
-### 3. Запуск приложения
-```powershell
-poetry run uvicorn main:app --reload
-```
-
-Приложение будет доступно по адресу: http://127.0.0.1:8000  
-Swagger UI: http://127.0.0.1:8000/docs
-
----
-
----
-
 ## Запуск через Docker
 
 Убедитесь, что Docker установлен.
@@ -51,7 +27,29 @@ alembic upgrade head
 ```powershell
 docker compose down
 ```
+---
 
+## Запуск (локально, через Poetry)
+
+### 1. Установка зависимостей
+```powershell
+poetry install
+```
+
+### 2. Применение миграций
+```powershell
+poetry run alembic upgrade head
+```
+
+### 3. Запуск приложения
+```powershell
+poetry run uvicorn main:app --reload
+```
+Приложение будет доступно по адресу: http://127.0.0.1:8000  
+Swagger UI: http://127.0.0.1:8000/docs
+
+_Что-бы приложение работало полноценно, надо будет отдельно запускать PostgreSQL, Kafka, да и comsumer, так что рекомендую всё таки Docker. _
+---
 ---
 
 ## Тесты
