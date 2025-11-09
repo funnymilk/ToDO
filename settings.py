@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     YA_PASSWORD: str
     YA_USER: Optional[str] = None
     YA_PASSWORD: Optional[str] = None
+    LOGLEVEL: str
 
     @property
     def db_url(self) -> str:
