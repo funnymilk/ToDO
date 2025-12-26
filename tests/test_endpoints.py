@@ -169,7 +169,6 @@ def test_tasks_create(task_client, mock_tasks_service):
         "title": "str",
         "description": "str",
         "is_done": False,
-        "owner_id": 1,  # integer, а не строка
         "deadline": "2025-12-10 13:45"
     }
     url = "/tasks/"
@@ -178,6 +177,7 @@ def test_tasks_create(task_client, mock_tasks_service):
     assert response.status_code == 201
     assert response_data["id"] == 1
     assert response_data["title"] == "str"
+    assert response_data["owner_id"] == 1
     mock_tasks_service.create_task.assert_called_once()
 
 def test_invalid_tasks_create(task_client, mock_tasks_service):
@@ -186,7 +186,6 @@ def test_invalid_tasks_create(task_client, mock_tasks_service):
         "title": "str",
         "description": "str",
         "is_done": False,
-        "owner_id": 2,  # integer, а не строка
         "deadline": "2025-12-10 13:45"
     }
     url = "/tasks/"
@@ -226,8 +225,25 @@ def test_TaskNotFound_get_tasks(task_client, mock_tasks_service):
     assert response_data["detail"] == "Таких задач нет"
     mock_tasks_service.get_task.assert_called_once()
 
+
+def test_get_task_not_owner(task_client, mock_tasks_service):
+    # task belongs to another user
+    mock_tasks_service.get_task.return_value = TaskOut(
+        id=1,
+        title="str",
+        description="str",
+        is_done=False,
+        owner_id=2,
+        deadline=datetime(2025, 12, 10, 13, 45)
+    )
+    response = task_client.get("/tasks/1")
+    response_data = response.json()
+    assert response.status_code == 404
+    assert response_data["detail"] == "Таких задач нет"
+    mock_tasks_service.get_task.assert_called_once()
+
 def test_getAll_tasks(task_client, mock_tasks_service):
-    mock_tasks_service.get_all.return_value = [
+    mock_tasks_service.get_user_tasks.return_value = [
     TaskOut(id=1, title="Task 1", description="desc", is_done=True, owner_id=1, deadline=None),
     TaskOut(id=2, title="Task 2", description="desc", is_done=True, owner_id=1, deadline=None),
     ]
@@ -242,17 +258,17 @@ def test_getAll_tasks(task_client, mock_tasks_service):
     assert len(data) == 2
     assert data[0]["id"] == 1
     assert data[0]["is_done"] == True
-    mock_tasks_service.get_all.assert_called_once_with(True)
+    mock_tasks_service.get_user_tasks.assert_called_once_with(1, True, None)
     
-    mock_tasks_service.get_all.reset_mock()
+    mock_tasks_service.get_user_tasks.reset_mock()
     
     response_no_param = task_client.get("/tasks/all/")
     assert response_no_param.status_code == 200
-    mock_tasks_service.get_all.assert_called_once_with(None)
+    mock_tasks_service.get_user_tasks.assert_called_once_with(1, None, None)
 
 
 def test_getAll_TaskNotFound(task_client, mock_tasks_service):
-    mock_tasks_service.get_all.side_effect = TaskNotFound
+    mock_tasks_service.get_user_tasks.side_effect = TaskNotFound
 
     response_no_param = task_client.get("/tasks/all/")
     response_data = response_no_param.json()
@@ -260,14 +276,14 @@ def test_getAll_TaskNotFound(task_client, mock_tasks_service):
     assert response_no_param.status_code == 404
     assert "detail" in response_data
     assert response_data["detail"] == "Таких задач нет"
-    mock_tasks_service.get_all.assert_called_once_with(None)
+    mock_tasks_service.get_user_tasks.assert_called_once_with(1, None, None)
     
-    mock_tasks_service.get_all.reset_mock()
+    mock_tasks_service.get_user_tasks.reset_mock()
     response = task_client.get("/tasks/all/", params={"isdone": "true"})
     assert response.status_code == 404
     assert "detail" in response_data
     assert response_data["detail"] == "Таких задач нет"
-    mock_tasks_service.get_all.assert_called_once_with(True)
+    mock_tasks_service.get_user_tasks.assert_called_once_with(1, True, None)
 
 
 def test_get_user_task(task_client, mock_tasks_service):
@@ -301,6 +317,13 @@ def test_get_user_task(task_client, mock_tasks_service):
     assert len(response_data) == 2
     mock_tasks_service.get_user_tasks.assert_called_once_with(1, True, datetime(2025, 12, 10, 13, 45))
 
+
+def test_get_user_tasks_forbidden(task_client, mock_tasks_service):
+    response = task_client.get("/tasks/users/2")
+    response_data = response.json()
+    assert response.status_code == 404
+    assert response_data["detail"] == "Таких задач нет"
+
 def test_get_user_task_TaskNotFound(task_client, mock_tasks_service):
     mock_tasks_service.get_user_tasks.side_effect = TaskNotFound
 
@@ -330,13 +353,19 @@ def test_get_user_task_TaskNotFound(task_client, mock_tasks_service):
     mock_tasks_service.get_user_tasks.assert_called_once_with(1, True, datetime(2025, 12, 10, 13, 45))
 
 
-def test_del_task(task_client, mock_tasks_service):
+def test_del_task_success(task_client, mock_tasks_service):
+    # existing task belonging to current user
+    mock_tasks_service.get_task.return_value = TaskOut(id=1, title="t", description="d", is_done=False, owner_id=1, deadline=None)
     mock_tasks_service.del_task.return_value = Response(status_code=204)
 
     response = task_client.delete("/tasks/1")
     assert response.status_code == 204
+    mock_tasks_service.del_task.assert_called_once_with(1)
 
-def test_del_task(task_client, mock_tasks_service):
+
+def test_del_task_not_found(task_client, mock_tasks_service):
+    # task not found during delete
+    mock_tasks_service.get_task.return_value = TaskOut(id=1, title="t", description="d", is_done=False, owner_id=1, deadline=None)
     mock_tasks_service.del_task.side_effect = TaskNotFound
 
     response = task_client.delete("/tasks/1")
@@ -344,4 +373,15 @@ def test_del_task(task_client, mock_tasks_service):
     assert response.status_code == 404
     assert "detail" in response_data
     assert response_data["detail"] == "Таких задач нет"
-    mock_tasks_service.del_task.assert_called_once()
+    mock_tasks_service.del_task.assert_called_once_with(1)
+
+
+def test_del_task_forbidden(task_client, mock_tasks_service):
+    # cannot delete another user's task
+    mock_tasks_service.get_task.return_value = TaskOut(id=1, title="t", description="d", is_done=False, owner_id=2, deadline=None)
+
+    response = task_client.delete("/tasks/1")
+    response_data = response.json()
+    assert response.status_code == 404
+    assert response_data["detail"] == "Таких задач нет"
+    mock_tasks_service.del_task.assert_not_called()

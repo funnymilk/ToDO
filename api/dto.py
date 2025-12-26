@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from uuid import UUID
 
 
 @dataclass
@@ -27,3 +28,12 @@ class TaskUpdate:
     deadline: datetime | None = None
     title: str | None = None
     description: str | None = None
+
+@dataclass
+class Token:
+    id: UUID
+    user_id: int
+    token_hash: str
+    created_at: int
+    expires_at: int
+    revoked_at: int | None = None

@@ -24,5 +24,5 @@ def user_exceptions_trap(func):
             if isinstance(orig, UniqueViolation):
                 raise NotUniqEmailRepo from e            
         except SQLAlchemyError:
-            raise UserNotFoundRepo
+            raise UserNotFoundRepo from e
     return wrapper

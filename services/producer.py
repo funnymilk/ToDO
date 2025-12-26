@@ -32,5 +32,5 @@ def send_task_email(topic, name: str, user_email: str):
         value=json.dumps(message),
         on_delivery=delivery_report
     )
-        producer.flush()  # Гарантируем отправку перед завершением функции
+        producer.flush(1.0)  # Гарантируем отправку перед завершением функции
 

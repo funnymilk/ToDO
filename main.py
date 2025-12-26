@@ -8,10 +8,12 @@ from logger.logger import get_logger
 
 logger = get_logger(__name__)
 
-init_db() 
 app = FastAPI(title="ToDo API")
 app.mount("/home", StaticFiles(directory="home", html=True), name="home")
 app.include_router(api_router)
 register_exception_handlers(app)
 
 logger.info("ToDo API запущен.")
+for r in app.routes:
+    methods = getattr(r, "methods", None)
+    print("ROUTE:", r.path, methods)
