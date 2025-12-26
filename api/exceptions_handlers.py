@@ -1,8 +1,12 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from services.auth_exceptions import RefreshSessionNotFound
 from services.user_exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, UserNotFound
 from services.task_exceptions import NotFoundUserForTask, TaskNotFound
+from logger.logger import get_logger
+
+logger = get_logger(__name__)
 
 def register_exception_handlers(app):
     @app.exception_handler(TaskNotFound)
@@ -33,3 +37,7 @@ def register_exception_handlers(app):
     def task_not_found_handler(request: Request, exc: NotFoundUserForTask): 
         return JSONResponse(status_code=404, content={"detail": "нет такого пользователя"})
     
+    @app.exception_handler(RefreshSessionNotFound)
+    def refresh_session_not_found_handler(request: Request, exc: RefreshSessionNotFound):
+        logger.error("msg", exc_info=exc)
+        return JSONResponse(status_code=404, content={"detail": "Сессия не найдена"})

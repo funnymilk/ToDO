@@ -42,3 +42,17 @@ class AbstractRepositoryUser(ABC):
     @abstractmethod
     def login_check():
         raise NotImplementedError
+
+
+class AbstractRepositoryAuth(ABC):
+    @abstractmethod
+    def create_session():
+        raise NotImplementedError
+
+    @abstractmethod
+    def refresh_jti():
+        raise NotImplementedError
+
+    @abstractmethod
+    def jti_check():
+        raise NotImplementedError

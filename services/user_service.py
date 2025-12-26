@@ -1,14 +1,20 @@
+from hashlib import sha256
 import json
 import re
+from typing import Annotated
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
+from dataclasses import asdict
+from fastapi.params import Depends
+from api.jwt_utils import create_access_token, create_refresh_token, decode_token
 from repository.user_exceptions import UserNotFoundRepo
 from repository.repository import AbstractRepositoryUser
 from sqlalchemy.orm import Session
-from api.dto import UserCreate as dtoUCreate, LoginData as dtoLogin
+from api.dto import UserCreate as dtoUCreate, LoginData as dtoLogin, Token as dtoTokenRefresh, Token as dtoTokenNew
 from services.user_exceptions import EmailExists, IncorrectName, IncorrectPassword, InputIncorrectPassword, user_exceptions_trap
 from services import producer
 from logger.logger import get_logger
+from settings import Settings, get_settings
 
 logger = get_logger(__name__)
 
@@ -35,7 +41,7 @@ class UsersService:
             logger.warning(f"Введено недопустимое имя: {user.email}")
             raise IncorrectName    
         if not re.match(r"^(?=.*[A-Z])(?=.*\d).+$", user.password_hash):
-            logger.warning(f"ВведЁн недопустимый пароль: {user.email}")
+            logger.warning(f"Введён недопустимый пароль: {user.email}")
             raise IncorrectPassword
         user_data = {
             "name"  : user.name,
@@ -49,16 +55,11 @@ class UsersService:
         return new_user
 
     @user_exceptions_trap
-    def login(self, loginData: dtoLogin):
+    def verify_credentials(self, loginData: dtoLogin):
+        # Simple repo-level login that just verifies password and returns user info message
         user = self.users_repo.login_check(loginData.email)
-        # хэшируем введённый пароль и сравниваем bcrypt.verify(payload.password, user.password_hash)
         try:
             PasswordHasher().verify(user.password_hash, loginData.password)
         except VerifyMismatchError:
             raise InputIncorrectPassword
-        return {
-            "message": "Успешный вход",
-            "user_id": user.id,
-            "name": user.name,
-            "email": user.email
-        }
+        return {"message": "Успешный вход", "user_id": user.id}

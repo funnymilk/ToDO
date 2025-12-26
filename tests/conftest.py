@@ -18,6 +18,21 @@ from services.task_service import TasksService
 from services.user_service import UsersService
 from api.router import api_router
 from api.exceptions_handlers import register_exception_handlers
+from api.jwt_utils import create_access_token
+from settings import get_settings
+
+
+@pytest.fixture(autouse=True)
+def mock_settings(monkeypatch):
+    """Provide a minimal Settings-like object for JWT creation/validation in tests."""
+    class DummySettings:
+        ACCESS_TTL_MINUTES = 15
+        REFRESH_TTL_DAYS = 14
+        JWT_SECRET = "test-secret"
+        JWT_ALGORITHM = "HS256"
+
+    monkeypatch.setattr("settings.get_settings", lambda: DummySettings())
+    return DummySettings()
 
 @pytest.fixture
 def session():
@@ -41,6 +56,11 @@ def repo_task(session: Session) -> AbstractRepositoryTask:
 @pytest.fixture
 def repo_user(session: Session) -> AbstractRepositoryUser:    
     return SQLUsersRepository(session)
+
+@pytest.fixture
+def repo_auth(session: Session):
+    from repository.auth_repository import SQLAuthRepository
+    return SQLAuthRepository(session)
 
 @pytest.fixture
 def add_task(repo_task: AbstractRepositoryTask):
@@ -181,8 +201,9 @@ def client(app, mock_users_service):
         return mock_users_service    
     # Переопределяем зависимость
     app.dependency_overrides[users_service] = override_users_service    
-    # Создаём тестовый клиент
-    client = TestClient(app)    
+    # Создаём тестовый клиент с Authorization header
+    token = create_access_token(user_id=1, settings=get_settings())
+    client = TestClient(app, headers={"Authorization": f"Bearer {token}"})    
     yield client    
     # Очищаем переопределения после теста
     app.dependency_overrides.clear()
@@ -195,8 +216,9 @@ def task_client(app, mock_tasks_service):
         return mock_tasks_service    
     # Переопределяем зависимость
     app.dependency_overrides[tasks_service] = override_task_service    
-    # Создаём тестовый клиент
-    client = TestClient(app)    
+    # Создаём тестовый клиент с Authorization header
+    token = create_access_token(user_id=1, settings=get_settings())
+    client = TestClient(app, headers={"Authorization": f"Bearer {token}"})    
     yield client    
     # Очищаем переопределения после теста
     app.dependency_overrides.clear()

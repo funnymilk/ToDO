@@ -12,14 +12,20 @@ def get_user_endpoind(user_id: int, users_service: Annotated[UsersService, Depen
     return users_service.get_user(user_id)
 
 @router.post("/create", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def create_user_endpoind(user: UserCreate, authService: Annotated[UsersService, Depends(users_service)]):   
+def create_user_endpoind(user: UserCreate, users_service: Annotated[UsersService, Depends(users_service)]):   
     createUserData = user.model_dump()
     data = dtoUCreate(**createUserData)
-    return authService.create_user(data)
+    return users_service.create_user(data)
 
+"""
 @router.post("/login")
 def login_endpoint(user: LoginData, authService: Annotated[UsersService, Depends(users_service)]):
     loginData = user.model_dump()
     data = dtoLogin(**loginData)
-    return authService.login(data)
+    return authService.verify_credentials(data)
+"""
+
+
+
+
 

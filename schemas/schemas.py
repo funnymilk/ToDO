@@ -22,7 +22,6 @@ class TaskCreate(BaseModel):
     description: str | None = None
     is_done: bool | None = None
     deadline: datetime | None = None
-    owner_id: int
 
     @field_validator("deadline", mode="before")
     def parse_deadline(cls, value): 
@@ -65,3 +64,11 @@ class TaskUpdate(BaseModel):
     deadline: datetime | None = None
     title: str | None = None
     description: str | None = None
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
