@@ -380,6 +380,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.envLOCAL
+.env.*
 
 # Spyder project settings
 .spyderproject
