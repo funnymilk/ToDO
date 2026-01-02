@@ -7,6 +7,8 @@ from api.dto import LoginData as dtoLogin
 from services.auth_service import AuthService
 from repository.user_Repository import SQLUsersRepository
 from repository.auth_repository import SQLAuthRepository
+from services.user_service import UsersService
+from services.user_exceptions import InputIncorrectPassword
 
 
 def test_authenticate_stores_session(session, repo_user, repo_auth):
@@ -15,7 +17,10 @@ def test_authenticate_stores_session(session, repo_user, repo_auth):
     hashed = PasswordHasher().hash(pwd)
     user = repo_user.create_user({"name": "Tom", "email": "tom@example.com", "password_hash": hashed})
 
-    auth_service = AuthService(SQLUsersRepository, SQLAuthRepository, session)
+    # build dependencies explicitly for AuthService
+    users_service = UsersService(SQLUsersRepository, session)
+    auth_repo = SQLAuthRepository(session)
+    auth_service = AuthService(users_service, auth_repo)
 
     res = auth_service.authenticate(dtoLogin(email="tom@example.com", password=pwd), settings=__import__('settings').get_settings())
 
@@ -32,9 +37,11 @@ def test_authenticate_incorrect_password(session, repo_user):
     hashed = PasswordHasher().hash(pwd)
     repo_user.create_user({"name": "Tom", "email": "tom2@example.com", "password_hash": hashed})
 
-    auth_service = AuthService(SQLUsersRepository, SQLAuthRepository, session)
+    users_service = UsersService(SQLUsersRepository, session)
+    auth_repo = SQLAuthRepository(session)
+    auth_service = AuthService(users_service, auth_repo)
 
-    with pytest.raises(__import__('services.user_exceptions').InputIncorrectPassword):
+    with pytest.raises(InputIncorrectPassword):
         auth_service.authenticate(dtoLogin(email="tom2@example.com", password="BadPass"), settings=__import__('settings').get_settings())
 
 
@@ -43,7 +50,9 @@ def test_refresh_rotates_tokens(session, repo_user, repo_auth):
     hashed = PasswordHasher().hash(pwd)
     repo_user.create_user({"name": "Sam", "email": "sam@example.com", "password_hash": hashed})
 
-    auth_service = AuthService(SQLUsersRepository, SQLAuthRepository, session)
+    users_service = UsersService(SQLUsersRepository, session)
+    auth_repo = SQLAuthRepository(session)
+    auth_service = AuthService(users_service, auth_repo)
 
     res = auth_service.authenticate(dtoLogin(email="sam@example.com", password=pwd), settings=__import__('settings').get_settings())
     old_refresh = res["refresh_token"]

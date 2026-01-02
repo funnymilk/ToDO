@@ -74,7 +74,8 @@ def test_invalidPassword_create_user(client, mock_users_service):
         "password_hash": "secure_password"
     }    
     response = client.post(url, json=data)
-    assert response.status_code == 404  
+    # Validation -> 422
+    assert response.status_code == 422  
     response_data = response.json()
     assert "detail" in response_data
     assert response_data["detail"] == "Пароль должен содержать минимум 8 символов, включая заглавную букву, цифру и специальный символ."
@@ -88,7 +89,8 @@ def test_invalidEmail_create_user(client, mock_users_service):
         "password_hash": "secure_password"
     }    
     response = client.post(url, json=data)
-    assert response.status_code == 404  
+    # Conflict -> 409
+    assert response.status_code == 409  
     response_data = response.json()
     assert "detail" in response_data
     assert response_data["detail"] == "Пользователь с таким e-mail уже существует"
@@ -102,34 +104,49 @@ def test_invalidName_create_user(client, mock_users_service):
         "password_hash": "secure_password"
     }    
     response = client.post(url, json=data)
-    assert response.status_code == 404  
+    # Validation -> 422
+    assert response.status_code == 422  
     response_data = response.json()
     assert "detail" in response_data
     assert response_data["detail"] == "Имя не может быть одним из списка: admin, test, user"
 
 def test_login(client, mock_users_service):
-    mock_users_service.login.return_value = {
-            "message": "Успешный вход",
-            "user_id": 1,
-            "name": "Иван",
-            "email": "ivan@example.com"
-        }
-    url = "/users/login"
+    # auth now handled by /auth/login; override auth_service dependency with a mock
+    from api.dependencies import auth_service as auth_dep
+    from unittest.mock import MagicMock
+
+    mock_auth_service = MagicMock()
+    mock_auth_service.authenticate.return_value = {"access_token": "at", "refresh_token": "rt"}
+
+    # Override the auth_service dependency on the running app
+    client.app.dependency_overrides[auth_dep] = lambda: mock_auth_service
+
+    url = "/auth/login"
     data = {
         "email": "ivan@example.com",
         "password": "secure_password"
     }
     response = client.post(url, json=data)
     response_data = response.json()
-    assert response_data["message"] == "Успешный вход"
-    assert response_data["user_id"] == 1
-    assert response_data["name"] == "Иван"
-    assert response_data["email"] == "ivan@example.com"
-    mock_users_service.login.assert_called_once()
 
-def test_invalid_login(client, mock_users_service):
-    mock_users_service.login.side_effect = UserNotFound
-    url = "/users/login"
+    assert response.status_code == 200
+    assert response_data["access_token"] == "at"
+    assert response_data["refresh_token"] == "rt"
+    mock_auth_service.authenticate.assert_called_once()
+
+    # cleanup override
+    client.app.dependency_overrides.pop(auth_dep, None)
+
+def test_invalid_login_not_found(client, mock_users_service):
+    # auth endpoint used; override auth_service to raise UserNotFound
+    from api.dependencies import auth_service as auth_dep
+    from unittest.mock import MagicMock
+
+    mock_auth_service = MagicMock()
+    mock_auth_service.authenticate.side_effect = UserNotFound
+    client.app.dependency_overrides[auth_dep] = lambda: mock_auth_service
+
+    url = "/auth/login"
     data = {
         "email": "ivan@example.com",
         "password": "secure_password"
@@ -141,9 +158,17 @@ def test_invalid_login(client, mock_users_service):
     assert "detail" in response_data
     assert response_data["detail"] == "Пользователь не найден"
 
-def test_invalid_login(client, mock_users_service):
-    mock_users_service.login.side_effect = InputIncorrectPassword
-    url = "/users/login"
+    client.app.dependency_overrides.pop(auth_dep, None)
+
+def test_invalid_login_bad_password(client, mock_users_service):
+    from api.dependencies import auth_service as auth_dep
+    from unittest.mock import MagicMock
+
+    mock_auth_service = MagicMock()
+    mock_auth_service.authenticate.side_effect = InputIncorrectPassword
+    client.app.dependency_overrides[auth_dep] = lambda: mock_auth_service
+
+    url = "/auth/login"
     data = {
         "email": "ivan@example.com",
         "password": "secure_password"
@@ -151,9 +176,12 @@ def test_invalid_login(client, mock_users_service):
     response = client.post(url, json=data)
     response_data = response.json()
     
-    assert response.status_code == 404  
+    # password mismatch -> validation-like -> 422
+    assert response.status_code == 422  
     assert "detail" in response_data
     assert response_data["detail"] == "Неверный пароль"
+
+    client.app.dependency_overrides.pop(auth_dep, None)
 
     # ---------------------------------------------------TASKS---------------------------------------------- #
 def test_tasks_create(task_client, mock_tasks_service):
@@ -193,7 +221,7 @@ def test_invalid_tasks_create(task_client, mock_tasks_service):
     response_data = response.json()
     assert response.status_code == 404  
     assert "detail" in response_data
-    assert response_data["detail"] == "нет такого пользователя"
+    assert response_data["detail"] == "Пользователь не найден"
     mock_tasks_service.create_task.assert_called_once()
 
 def test_get_tasks(task_client, mock_tasks_service):
@@ -222,7 +250,7 @@ def test_TaskNotFound_get_tasks(task_client, mock_tasks_service):
     response_data = response.json()
     assert response.status_code == 404
     assert "detail" in response_data
-    assert response_data["detail"] == "Таких задач нет"
+    assert response_data["detail"] == "Задача не найдена"
     mock_tasks_service.get_task.assert_called_once()
 
 
@@ -239,7 +267,7 @@ def test_get_task_not_owner(task_client, mock_tasks_service):
     response = task_client.get("/tasks/1")
     response_data = response.json()
     assert response.status_code == 404
-    assert response_data["detail"] == "Таких задач нет"
+    assert response_data["detail"] == "Задача не найдена"
     mock_tasks_service.get_task.assert_called_once()
 
 def test_getAll_tasks(task_client, mock_tasks_service):
@@ -268,21 +296,22 @@ def test_getAll_tasks(task_client, mock_tasks_service):
 
 
 def test_getAll_TaskNotFound(task_client, mock_tasks_service):
-    mock_tasks_service.get_user_tasks.side_effect = TaskNotFound
+    # empty result should be returned as 200 + [] (not a 404)
+    mock_tasks_service.get_user_tasks.return_value = []
 
     response_no_param = task_client.get("/tasks/all/")
-    response_data = response_no_param.json()
+    data = response_no_param.json()
     
-    assert response_no_param.status_code == 404
-    assert "detail" in response_data
-    assert response_data["detail"] == "Таких задач нет"
+    assert response_no_param.status_code == 200
+    assert isinstance(data, list)
+    assert data == []
     mock_tasks_service.get_user_tasks.assert_called_once_with(1, None, None)
     
     mock_tasks_service.get_user_tasks.reset_mock()
     response = task_client.get("/tasks/all/", params={"isdone": "true"})
-    assert response.status_code == 404
-    assert "detail" in response_data
-    assert response_data["detail"] == "Таких задач нет"
+    data = response.json()
+    assert response.status_code == 200
+    assert data == []
     mock_tasks_service.get_user_tasks.assert_called_once_with(1, True, None)
 
 
@@ -322,34 +351,32 @@ def test_get_user_tasks_forbidden(task_client, mock_tasks_service):
     response = task_client.get("/tasks/users/2")
     response_data = response.json()
     assert response.status_code == 404
-    assert response_data["detail"] == "Таких задач нет"
+    assert response_data["detail"] == "Задача не найдена"
 
 def test_get_user_task_TaskNotFound(task_client, mock_tasks_service):
-    mock_tasks_service.get_user_tasks.side_effect = TaskNotFound
+    # empty result should be returned as 200 + []
+    mock_tasks_service.get_user_tasks.return_value = []
 
     response_no_param = task_client.get("/tasks/users/1")
-    response_data = response_no_param.json()
-    assert response_no_param.status_code == 404
-    assert "detail" in response_data
-    assert response_data["detail"] == "Таких задач нет"
+    data = response_no_param.json()
+    assert response_no_param.status_code == 200
+    assert data == []
     mock_tasks_service.get_user_tasks.assert_called_once_with(1, None, None)
 
     mock_tasks_service.get_user_tasks.reset_mock()
 
     response_isdone = task_client.get("/tasks/users/1", params={"check": "true"})
-    response_data = response_isdone.json()
-    assert response_isdone.status_code == 404
-    assert "detail" in response_data
-    assert response_data["detail"] == "Таких задач нет"
+    data = response_isdone.json()
+    assert response_isdone.status_code == 200
+    assert data == []
     mock_tasks_service.get_user_tasks.assert_called_once_with(1, True, None)
 
     mock_tasks_service.get_user_tasks.reset_mock()
 
     response_isdone_deadline = task_client.get("/tasks/users/1", params={"check": "true", "deadline": "2025-12-10 13:45"})
-    response_data = response_isdone_deadline.json()
-    assert response_isdone_deadline.status_code == 404
-    assert "detail" in response_data
-    assert response_data["detail"] == "Таких задач нет"
+    data = response_isdone_deadline.json()
+    assert response_isdone_deadline.status_code == 200
+    assert data == []
     mock_tasks_service.get_user_tasks.assert_called_once_with(1, True, datetime(2025, 12, 10, 13, 45))
 
 
@@ -372,7 +399,7 @@ def test_del_task_not_found(task_client, mock_tasks_service):
     response_data = response.json()
     assert response.status_code == 404
     assert "detail" in response_data
-    assert response_data["detail"] == "Таких задач нет"
+    assert response_data["detail"] == "Задача не найдена"
     mock_tasks_service.del_task.assert_called_once_with(1)
 
 
@@ -383,5 +410,5 @@ def test_del_task_forbidden(task_client, mock_tasks_service):
     response = task_client.delete("/tasks/1")
     response_data = response.json()
     assert response.status_code == 404
-    assert response_data["detail"] == "Таких задач нет"
+    assert response_data["detail"] == "Задача не найдена"
     mock_tasks_service.del_task.assert_not_called()

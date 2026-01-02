@@ -72,43 +72,6 @@ def test_create_user_weak_password(user_service, fake_repo):
         with pytest.raises(IncorrectPassword):
             user_service.create_user(user)
 
-def test_login_success(user_service, fake_repo):
-    """Успешный вход — verify проходит."""
-    hashed = PasswordHasher().hash("Secret123")
-    fake_repo.login_check.return_value = type("User", (), {
-        "id": 1,
-        "name": "Tom",
-        "email": "tom@example.com",
-        "password_hash": hashed
-    })()
-
-    data = type("dto", (), {
-        "email": "tom@example.com",
-        "password": "Secret123"
-    })()
-
-    result = user_service.login(data)
-
-    fake_repo.login_check.assert_called_once_with("tom@example.com")
-    assert result["message"] == "Успешный вход"
-    assert result["user_id"] == 1
-
-
-def test_login_incorrect_password(user_service, fake_repo):
-    """Неверный пароль — выбрасывается InputIncorrectPassword."""
-    hashed = PasswordHasher().hash("CorrectPass123")
-
-    fake_repo.login_check.return_value = type("User", (), {
-        "password_hash": hashed
-    })()
-
-    data = type("dto", (), {
-        "email": "test@example.com",
-        "password": "WrongPassword"
-    })()
-
-    with pytest.raises(InputIncorrectPassword):
-        user_service.login(data)
 
 
 # ---------------------------------------------------------TASK TEST---------------------------------------------

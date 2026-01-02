@@ -12,7 +12,8 @@ def task_exceptions_trap(func):
         self = args[0]
         try:
             result = func(*args, **kwargs)
-            if not result:
+            # Only treat explicit 'None' as not found. Empty lists/tuples are valid results.
+            if result is None:
                 raise TaskNotFoundRepo
             return result
         except IntegrityError as e:

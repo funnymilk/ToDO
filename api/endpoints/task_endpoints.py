@@ -7,6 +7,7 @@ from schemas.schemas import TaskCreate, TaskOut, TaskUpdate, TasksToOwner
 from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate
 from services.task_service import TasksService
 from api.auth import get_current_user
+from api.errors import NotFound
 
 router = APIRouter()
 
@@ -23,7 +24,7 @@ def get_task_endpoind(task_id: int, tasks_service: Annotated[TasksService, Depen
     task = tasks_service.get_task(task_id)
     # ownership check
     if task.owner_id != current_user_id:
-        raise HTTPException(status_code=404, detail="Таких задач нет")
+        raise NotFound(resource="task")
     return task
 
 @router.get("/all/", response_model=list[TaskOut])
@@ -36,7 +37,7 @@ def up_task_endpoind(task_id: int, data: TaskUpdate, tasks_service: Annotated[Ta
     # check ownership
     task = tasks_service.get_task(task_id)
     if getattr(task, "owner_id", None) != current_user_id:
-        raise HTTPException(status_code=404, detail="Таких задач нет")
+        raise NotFound(resource="task")
     update_data = data.model_dump(exclude_unset=True)
     data = dtoTUpdate(**update_data)
     update_data = {k: v for k, v in asdict(data).items() if v is not None}
@@ -45,8 +46,8 @@ def up_task_endpoind(task_id: int, data: TaskUpdate, tasks_service: Annotated[Ta
 @router.delete("/{task_id}")
 def del_task_endpoind(task_id: int, tasks_service: Annotated[TasksService, Depends(tasks_service)], current_user_id: Annotated[int, Depends(get_current_user)] = None):
     task = tasks_service.get_task(task_id)
-    if getattr(task, "owner_id", None) != current_user_id:
-        raise HTTPException(status_code=404, detail="Таких задач нет")
+    if getattr(task, "owner_id", None) != current_user_id:        
+        raise NotFound(resource="task")
     tasks_service.del_task(task_id)
     return Response(status_code=204)
 
@@ -55,7 +56,7 @@ def del_task_endpoind(task_id: int, tasks_service: Annotated[TasksService, Depen
 def get_user_tasks_endpoint(user_id: int, tasks_service: Annotated[TasksService, Depends(tasks_service)], current_user_id: Annotated[int, Depends(get_current_user)], check: str | None = Query(None), deadline: str | None = Query(None)):
     # forbid access to other users' tasks
     if user_id != current_user_id:
-        raise HTTPException(status_code=404, detail="Таких задач нет")
+        raise NotFound(resource="task")
 
     isdone = None
     if check is not None:
