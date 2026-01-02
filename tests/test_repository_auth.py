@@ -2,9 +2,11 @@ from datetime import datetime, timedelta
 import pytest
 
 
-def test_create_session_and_jti_check(repo_auth):
+def test_create_session_and_jti_check(repo_auth, repo_user):
     token_hash = "tokenhash123"
     expires_at = datetime.utcnow() + timedelta(days=7)
+    # ensure the user exists for FK constraint
+    repo_user.create_user({"name": "User", "email": "u@example.com", "password_hash": "x"})
     sess = repo_auth.create_session({"user_id": 1, "token_hash": token_hash, "expires_at": expires_at, "revoked_at": None})
 
     assert sess.token_hash == token_hash
@@ -13,7 +15,7 @@ def test_create_session_and_jti_check(repo_auth):
     assert found.token_hash == token_hash
 
 
-def test_refresh_jti_revokes_old_and_adds_new(repo_auth):
+def test_refresh_jti_revokes_old_and_adds_new(repo_auth, repo_user):
     user_id = 1
     old_hash = "oldhash123"
     new_hash = "newhash456"

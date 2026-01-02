@@ -15,4 +15,6 @@ def users_service(db: Session = Depends(get_db)):
     return UsersService(SQLUsersRepository, db)
 
 def auth_service(db: Session = Depends(get_db), users: UsersService = Depends(users_service),):
-    return AuthService(users, SQLAuthRepository, db)
+    # build auth repo instance outside AuthService and inject
+    auth_repo = SQLAuthRepository(db)
+    return AuthService(users, auth_repo)

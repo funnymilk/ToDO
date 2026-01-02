@@ -35,14 +35,14 @@ class UsersService:
         except UserNotFoundRepo:
             email_exists = False
         if email_exists:
-            logger.warning(f"Попытка создать пользователя с существующим email: {user.email}")
-            raise EmailExists
+            logger.warning("Попытка создать пользователя с существующим email: %s", user.email)
+            raise EmailExists()
         if user.name.strip().lower() in ["admin", "test", "user"]:
-            logger.warning(f"Введено недопустимое имя: {user.email}")
-            raise IncorrectName    
+            logger.warning("Введено недопустимое имя: %s", user.email)
+            raise IncorrectName()
         if not re.match(r"^(?=.*[A-Z])(?=.*\d).+$", user.password_hash):
-            logger.warning(f"Введён недопустимый пароль: {user.email}")
-            raise IncorrectPassword
+            logger.warning("Введён недопустимый пароль: %s", user.email)
+            raise IncorrectPassword() #кажется тут больше про validation_error и ошибка 422
         user_data = {
             "name"  : user.name,
             "email" : user.email,
@@ -51,7 +51,7 @@ class UsersService:
 
         new_user = self.users_repo.create_user(user_data)   
         producer.send_task_email("user-created-topic", user_data["name"], user_data["email"])
-        logger.info(f"Юзер {user_data['email']} создан")
+        logger.info("User created: %s", user_data['email'])
         return new_user
 
     @user_exceptions_trap
@@ -61,5 +61,5 @@ class UsersService:
         try:
             PasswordHasher().verify(user.password_hash, loginData.password)
         except VerifyMismatchError:
-            raise InputIncorrectPassword
+            raise InputIncorrectPassword()
         return {"message": "Успешный вход", "user_id": user.id}

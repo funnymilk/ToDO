@@ -4,6 +4,9 @@ from repository.repository import AbstractRepositoryTask
 from api.dto import TaskCreate as dtoTCreate, TaskUpdate as dtoTUpdate
 from sqlalchemy.orm import Session
 from services.task_exceptions import task_exceptions_trap
+from logger.logger import get_logger
+
+logger = get_logger(__name__)
 
 class TasksService:
     def __init__(self, tasks_repo_class: AbstractRepositoryTask, db: Session):
@@ -15,8 +18,9 @@ class TasksService:
         # 2. то тогда создаём таск
         # 3. в противном случае ошибка "юзер не активный"
         # 4. открываешь транзацкцию и проверяешь юзера
-        
-        return self.tasks_repo.add_one(asdict(task))
+        new_task = self.tasks_repo.add_one(asdict(task))
+        logger.info("Task created: %s", getattr(new_task, 'id', new_task))
+        return new_task
 
     @task_exceptions_trap
     def get_task(self, task_id: int):        
@@ -46,4 +50,5 @@ class TasksService:
     @task_exceptions_trap
     def del_task(self, task_id: int):
         task = self.tasks_repo.del_task(task_id)
+        logger.info("Task deleted: %s", task_id)
         return task
